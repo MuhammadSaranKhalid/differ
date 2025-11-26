@@ -270,150 +270,119 @@ export default function Home() {
                           </TabsList>
 
                           <TabsContent value='side-by-side'>
-                            <div className='border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950'>
-                              {(() => {
-                                let originalLineNum = 1;
-                                let modifiedLineNum = 1;
+                            {diffType === 'line' ? (
+                              <div className='border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950'>
+                                {(() => {
+                                  let originalLineNum = 1;
+                                  let modifiedLineNum = 1;
 
-                                return diffResult.raw.map((part, index) => {
-                                  const isChanged = part.added || part.removed;
-                                  const choice = mergeChoices[index];
+                                  return diffResult.raw.map((part, index) => {
+                                    const isChanged = part.added || part.removed;
+                                    const choice = mergeChoices[index];
 
-                                  // Calculate line numbers for this chunk
-                                  const lines = part.value.split('\n');
-                                  const lineCount = lines.length - 1; // Don't count the last empty line from split
+                                    const lines = part.value.split('\n');
+                                    const lineCount = lines.length - 1;
 
-                                  // Store current line numbers
-                                  const currentOriginalLine = originalLineNum;
-                                  const currentModifiedLine = modifiedLineNum;
+                                    const currentOriginalLine = originalLineNum;
+                                    const currentModifiedLine = modifiedLineNum;
 
-                                  // Update line counters
-                                  if (!part.added) {
-                                    originalLineNum += lineCount;
-                                  }
-                                  if (!part.removed) {
-                                    modifiedLineNum += lineCount;
-                                  }
+                                    if (!part.added) {
+                                      originalLineNum += lineCount;
+                                    }
+                                    if (!part.removed) {
+                                      modifiedLineNum += lineCount;
+                                    }
 
-                                  return (
-                                    <div
-                                      key={index}
-                                      className={`grid grid-cols-[auto_1fr_auto_auto_1fr] gap-2 p-2 border-b border-gray-100 dark:border-gray-800`}
-                                    >
-                                      {/* Original line numbers (left) */}
-                                      <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none'>
-                                        {choice ? (
-                                          // Show line numbers for merged result
-                                          lines.slice(0, -1).map((_: string, i: number) => (
-                                            <div key={i} className='leading-5'>{currentOriginalLine + i}</div>
-                                          ))
-                                        ) : (
-                                          // Show line numbers for original
-                                          !part.added && lines.slice(0, -1).map((_: string, i: number) => (
-                                            <div key={i} className='leading-5'>{currentOriginalLine + i}</div>
-                                          ))
-                                        )}
-                                      </div>
-
-                                      {/* Original/Merged (left) */}
+                                    return (
                                       <div
-                                        className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
-                                          choice
-                                            ? 'bg-green-50 dark:bg-green-950/30'
-                                            : part.removed
-                                            ? 'bg-red-100 dark:bg-red-900/30'
-                                            : part.added
-                                            ? 'opacity-20'
-                                            : ''
-                                        }`}
+                                        key={index}
+                                        className={`grid grid-cols-[auto_1fr_auto_auto_1fr] gap-2 p-2 border-b border-gray-100 dark:border-gray-800`}
                                       >
-                                        {choice ? (
-                                          // Show merged result
-                                          choice === 'original' ? part.value : part.value
-                                        ) : (
-                                          // Show original diff
-                                          !part.added && part.value
-                                        )}
-                                      </div>
+                                        <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none'>
+                                          {choice
+                                            ? lines.slice(0, -1).map((_: string, i: number) => <div key={i} className='leading-5'>{currentOriginalLine + i}</div>)
+                                            : !part.added && lines.slice(0, -1).map((_: string, i: number) => <div key={i} className='leading-5'>{currentOriginalLine + i}</div>)}
+                                        </div>
 
-                                      {/* Merge controls (center) */}
-                                      <div className='flex flex-row items-center justify-center gap-1 min-w-[80px]'>
-                                        {isChanged && !choice && (
-                                          <>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant='outline'
-                                                  size='icon'
-                                                  className='h-6 w-6'
-                                                  onClick={() => handleMergeChoice(index, 'original')}
-                                                >
-                                                  <ChevronLeft className='h-3 w-3' />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p>Use original (left)</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant='outline'
-                                                  size='icon'
-                                                  className='h-6 w-6'
-                                                  onClick={() => handleMergeChoice(index, 'modified')}
-                                                >
-                                                  <ChevronRight className='h-3 w-3' />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p>Use modified (right)</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </>
-                                        )}
-                                      </div>
+                                        <div
+                                          className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
+                                            choice
+                                              ? 'bg-green-50 dark:bg-green-950/30'
+                                              : part.removed
+                                              ? 'bg-red-100 dark:bg-red-900/30'
+                                              : part.added
+                                              ? 'opacity-20'
+                                              : ''
+                                          }`}
+                                        >
+                                          {choice ? (choice === 'original' ? part.value : part.value) : !part.added && part.value}
+                                        </div>
 
-                                      {/* Modified line numbers (right) */}
-                                      <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none'>
-                                        {choice ? (
-                                          // Show line numbers for merged result
-                                          lines.slice(0, -1).map((_, i) => (
-                                            <div key={i} className='leading-5'>{currentModifiedLine + i}</div>
-                                          ))
-                                        ) : (
-                                          // Show line numbers for modified
-                                          !part.removed && lines.slice(0, -1).map((_, i) => (
-                                            <div key={i} className='leading-5'>{currentModifiedLine + i}</div>
-                                          ))
-                                        )}
-                                      </div>
+                                        <div className='flex flex-row items-center justify-center gap-1 min-w-[80px]'>
+                                          {isChanged && !choice && (
+                                            <>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button variant='outline' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(index, 'original')}>
+                                                    <ChevronLeft className='h-3 w-3' />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent><p>Use original (left)</p></TooltipContent>
+                                              </Tooltip>
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button variant='outline' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(index, 'modified')}>
+                                                    <ChevronRight className='h-3 w-3' />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent><p>Use modified (right)</p></TooltipContent>
+                                              </Tooltip>
+                                            </>
+                                          )}
+                                        </div>
 
-                                      {/* Modified/Merged (right) */}
-                                      <div
-                                        className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
-                                          choice
-                                            ? 'bg-green-50 dark:bg-green-950/30'
-                                            : part.added
-                                            ? 'bg-green-100 dark:bg-green-900/30'
-                                            : part.removed
-                                            ? 'opacity-20'
-                                            : ''
-                                        }`}
-                                      >
-                                        {choice ? (
-                                          // Show merged result
-                                          choice === 'original' ? (part.removed ? part.value : '') : (part.added ? part.value : '')
-                                        ) : (
-                                          // Show modified diff
-                                          !part.removed && part.value
-                                        )}
+                                        <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none'>
+                                          {choice
+                                            ? lines.slice(0, -1).map((_, i) => <div key={i} className='leading-5'>{currentModifiedLine + i}</div>)
+                                            : !part.removed && lines.slice(0, -1).map((_, i) => <div key={i} className='leading-5'>{currentModifiedLine + i}</div>)}
+                                        </div>
+
+                                        <div
+                                          className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
+                                            choice
+                                              ? 'bg-green-50 dark:bg-green-950/30'
+                                              : part.added
+                                              ? 'bg-green-100 dark:bg-green-900/30'
+                                              : part.removed
+                                              ? 'opacity-20'
+                                              : ''
+                                          }`}
+                                        >
+                                          {choice
+                                            ? choice === 'original' ? (part.removed ? part.value : '') : part.added ? part.value : ''
+                                            : !part.removed && part.value}
+                                        </div>
                                       </div>
-                                    </div>
-                                  );
-                                });
-                              })()}
-                            </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-4 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950">
+                                <div
+                                  className="p-4 font-mono text-sm whitespace-pre-wrap"
+                                  dangerouslySetInnerHTML={{
+                                    __html: diffResult.original,
+                                  }}
+                                />
+                                <div
+                                  className="p-4 font-mono text-sm whitespace-pre-wrap border-l border-gray-200 dark:border-gray-800"
+                                  dangerouslySetInnerHTML={{
+                                    __html: diffResult.modified,
+                                  }}
+                                />
+                              </div>
+                            )}
                           </TabsContent>
 
                           <TabsContent value='inline'>
@@ -435,8 +404,7 @@ export default function Home() {
                           </TabsContent>
                         </Tabs>
 
-                        {/* Merged Result Preview */}
-                        {Object.keys(mergeChoices).length > 0 && (
+                        {diffType === 'line' && Object.keys(mergeChoices).length > 0 && (
                           <div className='mt-6'>
                             <div className='flex justify-between items-center mb-3'>
                               <h4 className='text-base font-semibold'>Merged Result</h4>
