@@ -337,32 +337,48 @@ export default function Home() {
                                     >
                                       {/* Original line numbers (left) */}
                                       <div className="bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
-                                        {!part.added && lines.slice(0, -1).map((_, i) => (
-                                          <div key={i} className="leading-5">{currentOriginalLine + i}</div>
-                                        ))}
+                                        {choice ? (
+                                          // Show line numbers for merged result
+                                          lines.slice(0, -1).map((_: string, i: number) => (
+                                            <div key={i} className="leading-5">{currentOriginalLine + i}</div>
+                                          ))
+                                        ) : (
+                                          // Show line numbers for original
+                                          !part.added && lines.slice(0, -1).map((_: string, i: number) => (
+                                            <div key={i} className="leading-5">{currentOriginalLine + i}</div>
+                                          ))
+                                        )}
                                       </div>
 
-                                      {/* Original (left) */}
+                                      {/* Original/Merged (left) */}
                                       <div
                                         className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
-                                          part.removed
+                                          choice
+                                            ? "bg-green-50 dark:bg-green-950/30"
+                                            : part.removed
                                             ? "bg-red-100 dark:bg-red-900/30"
                                             : part.added
-                                            ? "opacity-30"
+                                            ? "opacity-20"
                                             : ""
                                         }`}
                                       >
-                                        {!part.added && part.value}
+                                        {choice ? (
+                                          // Show merged result
+                                          choice === "original" ? part.value : part.value
+                                        ) : (
+                                          // Show original diff
+                                          !part.added && part.value
+                                        )}
                                       </div>
 
                                       {/* Merge controls (center) */}
                                       <div className="flex flex-row items-center justify-center gap-1 min-w-[80px]">
-                                        {isChanged && (
+                                        {isChanged && !choice && (
                                           <>
                                             <Tooltip>
                                               <TooltipTrigger asChild>
                                                 <Button
-                                                  variant={choice === "original" ? "default" : "outline"}
+                                                  variant="outline"
                                                   size="icon"
                                                   className="h-6 w-6"
                                                   onClick={() => handleMergeChoice(index, "original")}
@@ -377,7 +393,7 @@ export default function Home() {
                                             <Tooltip>
                                               <TooltipTrigger asChild>
                                                 <Button
-                                                  variant={choice === "modified" ? "default" : "outline"}
+                                                  variant="outline"
                                                   size="icon"
                                                   className="h-6 w-6"
                                                   onClick={() => handleMergeChoice(index, "modified")}
@@ -393,24 +409,40 @@ export default function Home() {
                                         )}
                                       </div>
 
-                                      {/* Modified line numbers (left of modified text) */}
+                                      {/* Modified line numbers (right) */}
                                       <div className="bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
-                                        {!part.removed && lines.slice(0, -1).map((_, i) => (
-                                          <div key={i} className="leading-5">{currentModifiedLine + i}</div>
-                                        ))}
+                                        {choice ? (
+                                          // Show line numbers for merged result
+                                          lines.slice(0, -1).map((_, i) => (
+                                            <div key={i} className="leading-5">{currentModifiedLine + i}</div>
+                                          ))
+                                        ) : (
+                                          // Show line numbers for modified
+                                          !part.removed && lines.slice(0, -1).map((_, i) => (
+                                            <div key={i} className="leading-5">{currentModifiedLine + i}</div>
+                                          ))
+                                        )}
                                       </div>
 
-                                      {/* Modified (right) */}
+                                      {/* Modified/Merged (right) */}
                                       <div
                                         className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
-                                          part.added
+                                          choice
+                                            ? "bg-green-50 dark:bg-green-950/30"
+                                            : part.added
                                             ? "bg-green-100 dark:bg-green-900/30"
                                             : part.removed
-                                            ? "opacity-30"
+                                            ? "opacity-20"
                                             : ""
                                         }`}
                                       >
-                                        {!part.removed && part.value}
+                                        {choice ? (
+                                          // Show merged result
+                                          choice === "original" ? (part.removed ? part.value : "") : (part.added ? part.value : "")
+                                        ) : (
+                                          // Show modified diff
+                                          !part.removed && part.value
+                                        )}
                                       </div>
                                     </div>
                                   );
@@ -437,6 +469,35 @@ export default function Home() {
                             </div>
                           </TabsContent>
                         </Tabs>
+
+                        {/* Merged Result Preview */}
+                        {Object.keys(mergeChoices).length > 0 && (
+                          <div className="mt-6">
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="text-base font-semibold">Merged Result</h4>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={copyMergedResult}
+                                  >
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Copy Merged
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Copy the merged result to clipboard</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900">
+                              <div className="p-4 font-mono text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                                {getMergedResult()}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
