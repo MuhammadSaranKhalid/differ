@@ -6,22 +6,18 @@ import { diffChars, diffWords, diffLines } from "diff";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Moon, Sun, Copy, Download, GitCompareArrows, Split } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { Copy, Download, GitCompareArrows, Split } from "lucide-react";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export default function Home() {
-  const [theme, setTheme] = useState("dark");
   const [originalText, setOriginalText] = useState("");
   const [modifiedText, setModifiedText] = useState("");
   const [diffResult, setDiffResult] = useState(null);
   const [diffType, setDiffType] = useState("line");
   const [viewType, setViewType] = useState("side-by-side");
   const [copyStatus, setCopyStatus] = useState("Copy Diff Result");
-
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-    document.documentElement.classList.toggle("dark");
-  };
 
   const runDiff = () => {
     let diff;
@@ -38,14 +34,14 @@ export default function Home() {
     }
 
     const original = diff.map((part) => {
-      const color = part.added ? "bg-[#4caf50]/40 dark:bg-[#4caf50]/30" : part.removed ? "bg-[#ff4d4d]/40 dark:bg-[#ff4d4d]/30" : "";
-      return `<span class="${color}">${part.value}</span>`;
-    }).join("");
+        const color = part.added ? "bg-green-200 dark:bg-green-900" : part.removed ? "bg-red-200 dark:bg-red-900" : "";
+        return `<span class="${color}">${part.value}</span>`;
+      }).join("");
 
     const modified = diff.map((part) => {
-      const color = part.added ? "bg-[#4caf50]/40 dark:bg-[#4caf50]/30" : part.removed ? "bg-[#ff4d4d]/40 dark:bg-[#ff4d4d]/30" : "";
-      return `<span class="${color}">${part.value}</span>`;
-    }).join("");
+        const color = part.added ? "bg-green-200 dark:bg-green-900" : part.removed ? "bg-red-200 dark:bg-red-900" : "";
+        return `<span class="${color}">${part.value}</span>`;
+      }).join("");
 
     setDiffResult({ original, modified, raw: diff });
   };
@@ -80,12 +76,12 @@ export default function Home() {
   };
 
   return (
-    <div className={`font-display ${theme === 'dark' ? 'dark' : ''}`}>
-      <div className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden bg-background-light dark:bg-background-dark text-[#1a1a1a] dark:text-[#E0E0E0]">
+    <div className="font-sans">
+      <div className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
         <div className="layout-container flex h-full grow flex-col">
           <div className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 flex flex-1 justify-center py-5">
             <div className="layout-content-container flex flex-col w-full max-w-7xl flex-1">
-              <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#E0E0E0] dark:border-[#333333] px-4 py-3 mb-6">
+              <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 dark:border-gray-800 px-4 py-3 mb-6">
                 <div className="flex items-center gap-4">
                   <div className="size-6 text-primary">
                     <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -99,38 +95,40 @@ export default function Home() {
                   </div>
                   <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">DiffChecker</h2>
                 </div>
-                <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={toggleTheme}>
-                  {theme === "light" ? <Moon className="h-6 w-6" /> : <Sun className="h-6 w-6" />}
-                </Button>
+                <ModeToggle />
               </header>
 
               <main className="flex flex-col gap-8 px-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col">
-                    <Label htmlFor="original-text" className="text-base font-medium leading-normal pb-2">
-                      Original Text
-                    </Label>
-                    <Textarea
-                      id="original-text"
-                      placeholder="Paste the original text here."
-                      className="h-64"
-                      value={originalText}
-                      onChange={(e) => setOriginalText(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <Label htmlFor="modified-text" className="text-base font-medium leading-normal pb-2">
-                      Modified Text
-                    </Label>
-                    <Textarea
-                      id="modified-text"
-                      placeholder="Paste the modified text here."
-                      className="h-64"
-                      value={modifiedText}
-                      onChange={(e) => setModifiedText(e.target.value)}
-                    />
-                  </div>
-                </div>
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="original-text" className="text-base font-medium leading-normal">
+                          Original Text
+                        </Label>
+                        <Textarea
+                          id="original-text"
+                          placeholder="Paste the original text here."
+                          className="h-64"
+                          value={originalText}
+                          onChange={(e) => setOriginalText(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="modified-text" className="text-base font-medium leading-normal">
+                          Modified Text
+                        </Label>
+                        <Textarea
+                          id="modified-text"
+                          placeholder="Paste the modified text here."
+                          className="h-64"
+                          value={modifiedText}
+                          onChange={(e) => setModifiedText(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 <div className="flex flex-col items-center justify-center gap-6 pt-2">
                   <Button onClick={runDiff} className="w-full sm:w-auto">
@@ -138,56 +136,64 @@ export default function Home() {
                   </Button>
                 </div>
 
-                <div className="flex flex-col gap-4 pt-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold leading-tight tracking-[-0.015em]">Results</h3>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                      <ToggleGroup type="single" defaultValue="line" variant="outline" onValueChange={(value) => setDiffType(value)}>
-                        <ToggleGroupItem value="line">Line</ToggleGroupItem>
-                        <ToggleGroupItem value="word">Word</ToggleGroupItem>
-                        <ToggleGroupItem value="character">Character</ToggleGroupItem>
-                      </ToggleGroup>
-                      <ToggleGroup type="single" defaultValue="side-by-side" variant="outline" onValueChange={(value) => setViewType(value)}>
-                        <ToggleGroupItem value="side-by-side"><GitCompareArrows className="h-4 w-4 mr-2" />Side-by-side</ToggleGroupItem>
-                        <ToggleGroupItem value="inline"><Split className="h-4 w-4 mr-2" />Inline</ToggleGroupItem>
-                      </ToggleGroup>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={copyToClipboard}><Copy className="h-4 w-4 mr-2" />{copyStatus}</Button>
-                        <Button variant="outline" size="sm" onClick={downloadJSON}><Download className="h-4 w-4 mr-2" />Download Diff as JSON</Button>
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h3 className="text-lg font-bold leading-tight tracking-[-0.015em]">Results</h3>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                          <Tabs value={diffType} onValueChange={setDiffType}>
+                            <TabsList>
+                              <TabsTrigger value="line">Line</TabsTrigger>
+                              <TabsTrigger value="word">Word</TabsTrigger>
+                              <TabsTrigger value="character">Character</TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                          <Tabs value={viewType} onValueChange={setViewType}>
+                            <TabsList>
+                              <TabsTrigger value="side-by-side"><GitCompareArrows className="h-4 w-4 mr-2" />Side-by-side</TabsTrigger>
+                              <TabsTrigger value="inline"><Split className="h-4 w-4 mr-2" />Inline</TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={copyToClipboard}><Copy className="h-4 w-4 mr-2" />{copyStatus}</Button>
+                            <Button variant="outline" size="sm" onClick={downloadJSON}><Download className="h-4 w-4 mr-2" />Download Diff as JSON</Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {diffResult && (
-                    <div
-                      className={`grid ${viewType === "side-by-side" ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"} gap-px bg-[#E0E0E0] dark:bg-[#333333] border border-[#E0E0E0] dark:border-[#333333] rounded-lg overflow-hidden min-h-64`}>
-                      <div className="bg-white dark:bg-[#1a1a1a] flex">
-                        <div className="bg-background-light dark:bg-[#222222] p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
-                          {originalText.split('').map((_, i) => <div key={i}>{i + 1}</div>)}
-                        </div>
-                        <div className="p-4 font-mono text-sm whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: diffResult.original }}></div>
-                      </div>
-                      {viewType === "side-by-side" && (
-                        <div className="bg-white dark:bg-[#1a1a1a] flex">
-                          <div className="bg-background-light dark:bg-[#222222] p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
-                            {modifiedText.split('').map((_, i) => <div key={i}>{i + 1}</div>)}
+                      {diffResult && (
+                        <TabsContent value={viewType}>
+                          <div
+                            className={`grid ${viewType === "side-by-side" ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"} gap-px bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64`}>
+                            <div className="bg-white dark:bg-gray-950 flex">
+                              <div className="bg-gray-50 dark:bg-gray-900 p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
+                                {originalText.split('').map((_, i) => <div key={i}>{i + 1}</div>)}
+                              </div>
+                              <div className="p-4 font-mono text-sm whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: diffResult.original }}></div>
+                            </div>
+                            {viewType === "side-by-side" && (
+                              <div className="bg-white dark:bg-gray-950 flex">
+                                <div className="bg-gray-50 dark:bg-gray-900 p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
+                                  {modifiedText.split('').map((_, i) => <div key={i}>{i + 1}</div>)}
+                                </div>
+                                <div className="p-4 font-mono text-sm whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: diffResult.modified }}></div>
+                              </div>
+                            )}
+                            {viewType === "inline" && (
+                              <div className="bg-white dark:bg-gray-950 flex">
+                                <div className="bg-gray-50 dark:bg-gray-900 p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
+                                  {/* Placeholder for line numbers in inline view */}
+                                </div>
+                                <div className="p-4 font-mono text-sm whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: diffResult.modified }}></div>
+                              </div>
+                            )}
                           </div>
-                          <div className="p-4 font-mono text-sm whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: diffResult.modified }}></div>
-                        </div>
-                      )}
-                      {viewType === "inline" && (
-                        <div className="bg-white dark:bg-[#1a1a1a] flex">
-                          <div className="bg-background-light dark:bg-[#222222] p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
-                            {/* Placeholder for line numbers in inline view */}
-                          </div>
-                          <div className="p-4 font-mono text-sm whitespace-pre-wrap flex-1" dangerouslySetInnerHTML={{ __html: diffResult.modified }}></div>
-                        </div>
+                        </TabsContent>
                       )}
                     </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
               </main>
             </div>
           </div>
