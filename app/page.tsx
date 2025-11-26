@@ -200,32 +200,11 @@ export default function Home() {
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                             <Tabs value={diffType} onValueChange={setDiffType}>
                               <TabsList>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <TabsTrigger value="line">Line</TabsTrigger>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Compare by lines</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <TabsTrigger value="word">Word</TabsTrigger>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Compare by words</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <TabsTrigger value="character">
-                                      Character
-                                    </TabsTrigger>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Compare by characters</p>
-                                  </TooltipContent>
-                                </Tooltip>
+                                <TabsTrigger value="line">Line</TabsTrigger>
+                                <TabsTrigger value="word">Word</TabsTrigger>
+                                <TabsTrigger value="character">
+                                  Character
+                                </TabsTrigger>
                               </TabsList>
                             </Tabs>
                             <div className="flex items-center gap-2">
@@ -280,28 +259,14 @@ export default function Home() {
 
                         <Tabs value={viewType} onValueChange={setViewType}>
                           <TabsList className="mb-4">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <TabsTrigger value="side-by-side">
-                                  <GitCompareArrows className="h-4 w-4 mr-2" />
-                                  Side-by-side
-                                </TabsTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>View original and modified side by side with merge controls</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <TabsTrigger value="inline">
-                                  <Split className="h-4 w-4 mr-2" />
-                                  Inline
-                                </TabsTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>View changes in a unified inline format</p>
-                              </TooltipContent>
-                            </Tooltip>
+                            <TabsTrigger value="side-by-side">
+                              <GitCompareArrows className="h-4 w-4 mr-2" />
+                              Side-by-side
+                            </TabsTrigger>
+                            <TabsTrigger value="inline">
+                              <Split className="h-4 w-4 mr-2" />
+                              Inline
+                            </TabsTrigger>
                           </TabsList>
 
                           <TabsContent value="side-by-side">
@@ -315,7 +280,7 @@ export default function Home() {
                                   const choice = mergeChoices[index];
 
                                   // Calculate line numbers for this chunk
-                                  const lines = part.value.split('\n');
+                                  const lines = part.value.split(''''');
                                   const lineCount = lines.length - 1; // Don't count the last empty line from split
 
                                   // Store current line numbers
@@ -455,7 +420,7 @@ export default function Home() {
                             <div className="grid grid-cols-1 gap-px bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64">
                               <div className="bg-white dark:bg-gray-950 flex">
                                 <div className="bg-gray-50 dark:bg-gray-900 p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none">
-                                  {modifiedText.split("\n").map((_, i) => (
+                                  {modifiedText.split("'''").map((_, i) => (
                                     <div key={i}>{i + 1}</div>
                                   ))}
                                 </div>
