@@ -1,13 +1,27 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { diff_match_patch, DIFF_DELETE, DIFF_INSERT, DIFF_EQUAL } from 'diff-match-patch';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Copy, Download, GitCompareArrows, Split, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  Copy,
+  Download,
+  GitCompareArrows,
+  Split,
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  FileText,
+  BarChart3,
+  Keyboard
+} from 'lucide-react';
 import { ModeToggle } from '@/components/mode-toggle';
 import {
   Tooltip,
@@ -15,6 +29,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const dmp = new diff_match_patch();
 
@@ -27,6 +49,13 @@ const escapeHtml = (text: string) => {
     .replace(/'/g, '&#039;');
 };
 
+interface DiffStats {
+  additions: number;
+  deletions: number;
+  modifications: number;
+  unchanged: number;
+}
+
 export default function Home() {
   const [originalText, setOriginalText] = useState('');
   const [modifiedText, setModifiedText] = useState('');
@@ -35,31 +64,165 @@ export default function Home() {
   const [viewType, setViewType] = useState('side-by-side');
   const [copyStatus, setCopyStatus] = useState('Copy Diff Result');
   const [mergeChoices, setMergeChoices] = useState<{ [key: number]: 'original' | 'modified' | null }>({});
+  const [contextLines, setContextLines] = useState(3);
+  const [showUnchanged, setShowUnchanged] = useState(true);
+  const [collapsedSections, setCollapsedSections] = useState<Set<number>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [splitRatio, setSplitRatio] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const runDiff = () => {
+  const leftScrollRef = useRef<HTMLDivElement>(null);
+  const rightScrollRef = useRef<HTMLDivElement>(null);
+  const [syncScroll, setSyncScroll] = useState(true);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + Enter: Run diff
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (originalText && modifiedText) {
+          runDiff();
+        }
+      }
+      // Ctrl/Cmd + K: Focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('search-input')?.focus();
+      }
+      // Ctrl/Cmd + Shift + C: Copy diff
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        copyToClipboard();
+      }
+      // Ctrl/Cmd + Shift + M: Copy merged
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'M') {
+        e.preventDefault();
+        copyMergedResult();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [originalText, modifiedText, diffResult]);
+
+  // Synchronized scrolling
+  const handleScroll = useCallback((source: 'left' | 'right') => {
+    if (!syncScroll) return;
+
+    return (e: React.UIEvent<HTMLDivElement>) => {
+      const target = e.currentTarget;
+      const other = source === 'left' ? rightScrollRef.current : leftScrollRef.current;
+
+      if (other) {
+        other.scrollTop = target.scrollTop;
+      }
+    };
+  }, [syncScroll]);
+
+  // Resizable split view
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const container = document.getElementById('split-container');
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const newRatio = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitRatio(Math.min(Math.max(newRatio, 20), 80));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  const runDiff = (type?: string) => {
     let diffs;
     const text1 = originalText.replace(/\r\n/g, '\n');
     const text2 = modifiedText.replace(/\r\n/g, '\n');
+    const currentDiffType = type || diffType;
 
-    switch (diffType) {
+    switch (currentDiffType) {
       case 'word':
-        const wordData = dmp.diff_linesToWords_(text1, text2);
-        diffs = dmp.diff_main(wordData.chars1, wordData.chars2, false);
-        dmp.diff_charsToLines_(diffs, wordData.lineArray);
+        diffs = dmp.diff_main(text1, text2);
+        dmp.diff_cleanupSemantic(diffs);
         break;
       case 'character':
         diffs = dmp.diff_main(text1, text2);
         break;
       default: // line
         const lineData = dmp.diff_linesToChars_(text1, text2);
+        console.log("Line DAtA : ", lineData)
         diffs = dmp.diff_main(lineData.chars1, lineData.chars2, false);
+        console.log("Diff : ", diffs)
         dmp.diff_charsToLines_(diffs, lineData.lineArray);
         break;
     }
     dmp.diff_cleanupSemantic(diffs);
     setDiffResult(diffs);
-    setMergeChoices({}); // Reset merge choices on new diff
+    setMergeChoices({});
+    setCollapsedSections(new Set());
   };
+
+  const diffStats = useMemo((): DiffStats => {
+    if (!diffResult) return { additions: 0, deletions: 0, modifications: 0, unchanged: 0 };
+
+    let stats: DiffStats = { additions: 0, deletions: 0, modifications: 0, unchanged: 0 };
+
+    if (diffType === 'line') {
+      let i = 0;
+      while (i < diffResult.length) {
+        const [type, value] = diffResult[i];
+        const lines = value.split('\n').filter((l: string) => l !== '');
+
+        if (type === DIFF_EQUAL) {
+          stats.unchanged += lines.length;
+          i++;
+        } else if (type === DIFF_DELETE) {
+          const nextPart = diffResult[i + 1];
+          if (nextPart && nextPart[0] === DIFF_INSERT) {
+            const deletedLines = lines.length;
+            const addedLines = nextPart[1].split('\n').filter((l: string) => l !== '').length;
+            stats.modifications += Math.min(deletedLines, addedLines);
+            stats.deletions += Math.max(0, deletedLines - addedLines);
+            stats.additions += Math.max(0, addedLines - deletedLines);
+            i += 2;
+          } else {
+            stats.deletions += lines.length;
+            i++;
+          }
+        } else if (type === DIFF_INSERT) {
+          stats.additions += lines.length;
+          i++;
+        }
+      }
+    } else {
+      diffResult.forEach(([type]) => {
+        if (type === DIFF_INSERT) stats.additions++;
+        else if (type === DIFF_DELETE) stats.deletions++;
+        else stats.unchanged++;
+      });
+    }
+
+    return stats;
+  }, [diffResult, diffType]);
 
   const alignedLineDiff = useMemo(() => {
     if (!diffResult || diffType !== 'line') return [];
@@ -71,18 +234,37 @@ export default function Home() {
       modifiedHtml: string;
       type: 'unchanged' | 'modified' | 'added' | 'removed';
       index: number;
+      sectionStart?: boolean;
+      sectionSize?: number;
     }> = [];
 
     let index = 0;
     let i = 0;
+    let unchangedCount = 0;
+    let sectionStartIndex = -1;
+
+    const finalizeSectionIfNeeded = () => {
+      if (unchangedCount > contextLines * 2 && !showUnchanged && sectionStartIndex >= 0) {
+        alignedRows[sectionStartIndex].sectionStart = true;
+        alignedRows[sectionStartIndex].sectionSize = unchangedCount;
+      }
+      unchangedCount = 0;
+      sectionStartIndex = -1;
+    };
 
     while (i < diffResult.length) {
       const [type, value] = diffResult[i];
-      const lines = value.endsWith('\n') ? value.slice(0, -1).split('\n') : [value];
+      const lines = value.endsWith('\n') ? value.slice(0, -1).split('\n') : value.split('\n');
 
       if (type === DIFF_EQUAL) {
-        lines.forEach(line => {
-          if(line === '') return;
+        lines.forEach((line: string, lineIdx: number) => {
+          if (line === '' && lineIdx === lines.length - 1) return;
+
+          if (unchangedCount === 0) {
+            sectionStartIndex = alignedRows.length;
+          }
+          unchangedCount++;
+
           alignedRows.push({
             originalLine: line,
             modifiedLine: line,
@@ -93,60 +275,117 @@ export default function Home() {
           });
         });
         i++;
-      } else if (type === DIFF_DELETE) {
-        const nextPart = diffResult[i + 1];
-        if (nextPart && nextPart[0] === DIFF_INSERT) {
-          const removedLines = lines;
-          const addedLines = nextPart[1].endsWith('\n') ? nextPart[1].slice(0, -1).split('\n') : [nextPart[1]];
-          const maxLen = Math.max(removedLines.length, addedLines.length);
+      } else {
+        finalizeSectionIfNeeded();
 
-          for (let j = 0; j < maxLen; j++) {
-            const oldLine = removedLines[j];
-            const newLine = addedLines[j];
+        if (type === DIFF_DELETE) {
+          const nextPart = diffResult[i + 1];
+          if (nextPart && nextPart[0] === DIFF_INSERT) {
+            const removedLines = lines.filter((l: string) => l !== '');
+            const addedLines = (nextPart[1].endsWith('\n')
+              ? nextPart[1].slice(0, -1).split('\n')
+              : nextPart[1].split('\n')).filter((l: string) => l !== '');
+            const maxLen = Math.max(removedLines.length, addedLines.length);
 
-            if (oldLine !== undefined && newLine !== undefined) {
-              const wordDiffs = dmp.diff_main(oldLine, newLine);
-              dmp.diff_cleanupSemantic(wordDiffs);
-              const oldHtml = wordDiffs.map(([type, value]) => {
-                if (type === DIFF_DELETE) return `<span class="bg-red-300 dark:bg-red-700 px-1">${escapeHtml(value)}</span>`;
-                if (type === DIFF_INSERT) return '';
-                return escapeHtml(value);
-              }).join('');
-              const newHtml = wordDiffs.map(([type, value]) => {
-                if (type === DIFF_INSERT) return `<span class="bg-green-300 dark:bg-green-700 px-1">${escapeHtml(value)}</span>`;
-                if (type === DIFF_DELETE) return '';
-                return escapeHtml(value);
-              }).join('');
-              alignedRows.push({ originalLine: oldLine, modifiedLine: newLine, originalHtml: oldHtml, modifiedHtml: newHtml, type: 'modified', index: index++ });
-            } else if (oldLine !== undefined) {
-              alignedRows.push({ originalLine: oldLine, modifiedLine: '', originalHtml: escapeHtml(oldLine), modifiedHtml: '&nbsp;', type: 'removed', index: index++ });
-            } else if (newLine !== undefined) {
-              alignedRows.push({ originalLine: '', modifiedLine: newLine, originalHtml: '&nbsp;', modifiedHtml: escapeHtml(newLine), type: 'added', index: index++ });
+            for (let j = 0; j < maxLen; j++) {
+              const oldLine = removedLines[j];
+              const newLine = addedLines[j];
+
+              if (oldLine !== undefined && newLine !== undefined) {
+                const wordDiffs = dmp.diff_main(oldLine, newLine);
+                dmp.diff_cleanupSemantic(wordDiffs);
+                const oldHtml = wordDiffs.map(([type, value]) => {
+                  if (type === DIFF_DELETE) return `<span class="bg-red-300 dark:bg-red-700 px-0.5 rounded">${escapeHtml(value)}</span>`;
+                  if (type === DIFF_INSERT) return '';
+                  return escapeHtml(value);
+                }).join('');
+                const newHtml = wordDiffs.map(([type, value]) => {
+                  if (type === DIFF_INSERT) return `<span class="bg-green-300 dark:bg-green-700 px-0.5 rounded">${escapeHtml(value)}</span>`;
+                  if (type === DIFF_DELETE) return '';
+                  return escapeHtml(value);
+                }).join('');
+                alignedRows.push({
+                  originalLine: oldLine,
+                  modifiedLine: newLine,
+                  originalHtml: oldHtml,
+                  modifiedHtml: newHtml,
+                  type: 'modified',
+                  index: index++
+                });
+              } else if (oldLine !== undefined) {
+                alignedRows.push({
+                  originalLine: oldLine,
+                  modifiedLine: '',
+                  originalHtml: escapeHtml(oldLine),
+                  modifiedHtml: '&nbsp;',
+                  type: 'removed',
+                  index: index++
+                });
+              } else if (newLine !== undefined) {
+                alignedRows.push({
+                  originalLine: '',
+                  modifiedLine: newLine,
+                  originalHtml: '&nbsp;',
+                  modifiedHtml: escapeHtml(newLine),
+                  type: 'added',
+                  index: index++
+                });
+              }
             }
+            i += 2;
+          } else {
+            lines.forEach((line: string) => {
+              if (line === '') return;
+              alignedRows.push({
+                originalLine: line,
+                modifiedLine: '',
+                originalHtml: escapeHtml(line),
+                modifiedHtml: '&nbsp;',
+                type: 'removed',
+                index: index++
+              });
+            });
+            i++;
           }
-          i += 2;
-        } else {
+        } else if (type === DIFF_INSERT) {
           lines.forEach(line => {
             if (line === '') return;
-            alignedRows.push({ originalLine: line, modifiedLine: '', originalHtml: escapeHtml(line), modifiedHtml: '&nbsp;', type: 'removed', index: index++ });
+            alignedRows.push({
+              originalLine: '',
+              modifiedLine: line,
+              originalHtml: '&nbsp;',
+              modifiedHtml: escapeHtml(line),
+              type: 'added',
+              index: index++
+            });
           });
           i++;
         }
-      } else if (type === DIFF_INSERT) {
-        lines.forEach(line => {
-          if (line === '') return;
-          alignedRows.push({ originalLine: '', modifiedLine: line, originalHtml: '&nbsp;', modifiedHtml: escapeHtml(line), type: 'added', index: index++ });
-        });
-        i++;
       }
     }
+
+    finalizeSectionIfNeeded();
     return alignedRows;
-  }, [diffResult, diffType]);
+  }, [diffResult, diffType, contextLines, showUnchanged]);
+
+  const filteredLineDiff = useMemo(() => {
+    if (!searchTerm) return alignedLineDiff;
+
+    const lowerSearch = searchTerm.toLowerCase();
+    return alignedLineDiff.filter(row =>
+      row.originalLine.toLowerCase().includes(lowerSearch) ||
+      row.modifiedLine.toLowerCase().includes(lowerSearch)
+    );
+  }, [alignedLineDiff, searchTerm]);
 
   const inlineDiffHtml = useMemo(() => {
     if (!diffResult) return '';
     return diffResult.map(([type, value]) => {
-      const color = type === DIFF_INSERT ? 'bg-green-200 dark:bg-green-900' : type === DIFF_DELETE ? 'bg-red-200 dark:bg-red-900' : '';
+      const color = type === DIFF_INSERT
+        ? 'bg-green-200 dark:bg-green-900'
+        : type === DIFF_DELETE
+        ? 'bg-red-200 dark:bg-red-900'
+        : '';
       return `<span class="${color}">${escapeHtml(value)}</span>`;
     }).join('');
   }, [diffResult]);
@@ -155,12 +394,12 @@ export default function Home() {
     if (!diffResult) return { original: '', modified: '' };
     const original = diffResult.map(([type, value]) => {
         if (type === DIFF_INSERT) return '';
-        const color = type === DIFF_DELETE ? 'bg-red-200 dark:bg-red-900' : '';
+        const color = type === DIFF_DELETE ? 'bg-red-200 dark:bg-red-900 rounded px-0.5' : '';
         return `<span class="${color}">${escapeHtml(value)}</span>`;
       }).join('');
     const modified = diffResult.map(([type, value]) => {
         if (type === DIFF_DELETE) return '';
-        const color = type === DIFF_INSERT ? 'bg-green-200 dark:bg-green-900' : '';
+        const color = type === DIFF_INSERT ? 'bg-green-200 dark:bg-green-900 rounded px-0.5' : '';
         return `<span class="${color}">${escapeHtml(value)}</span>`;
       }).join('');
     return { original, modified };
@@ -197,8 +436,80 @@ export default function Home() {
     }
   };
 
+  const downloadUnifiedDiff = () => {
+    if (!diffResult) return;
+
+    let unifiedDiff = '--- Original\n+++ Modified\n';
+
+    if (diffType === 'line') {
+      let originalLineNum = 1;
+      let modifiedLineNum = 1;
+      let hunkLines: string[] = [];
+      let hunkOriginalStart = 1;
+      let hunkModifiedStart = 1;
+
+      alignedLineDiff.forEach((row, idx) => {
+        if (row.type === 'unchanged') {
+          if (hunkLines.length > 0) {
+            unifiedDiff += `@@ -${hunkOriginalStart},${originalLineNum - hunkOriginalStart} +${hunkModifiedStart},${modifiedLineNum - hunkModifiedStart} @@\n`;
+            unifiedDiff += hunkLines.join('\n') + '\n';
+            hunkLines = [];
+          }
+          originalLineNum++;
+          modifiedLineNum++;
+          hunkOriginalStart = originalLineNum;
+          hunkModifiedStart = modifiedLineNum;
+        } else if (row.type === 'removed') {
+          hunkLines.push(`-${row.originalLine}`);
+          originalLineNum++;
+        } else if (row.type === 'added') {
+          hunkLines.push(`+${row.modifiedLine}`);
+          modifiedLineNum++;
+        } else if (row.type === 'modified') {
+          hunkLines.push(`-${row.originalLine}`);
+          hunkLines.push(`+${row.modifiedLine}`);
+          originalLineNum++;
+          modifiedLineNum++;
+        }
+      });
+
+      if (hunkLines.length > 0) {
+        unifiedDiff += `@@ -${hunkOriginalStart},${originalLineNum - hunkOriginalStart} +${hunkModifiedStart},${modifiedLineNum - hunkModifiedStart} @@\n`;
+        unifiedDiff += hunkLines.join('\n') + '\n';
+      }
+    } else {
+      diffResult.forEach(([type, value]) => {
+        if (type === DIFF_INSERT) unifiedDiff += `+${value}`;
+        else if (type === DIFF_DELETE) unifiedDiff += `-${value}`;
+        else unifiedDiff += ` ${value}`;
+      });
+    }
+
+    const blob = new Blob([unifiedDiff], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'diff.patch';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleMergeChoice = (index: number, choice: 'original' | 'modified') => {
     setMergeChoices((prev) => ({ ...prev, [index]: choice }));
+  };
+
+  const toggleSection = (index: number) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
   };
 
   const getMergedResult = () => {
@@ -214,9 +525,9 @@ export default function Home() {
             const choice = mergeChoices[row.index];
             if (choice === 'original') return row.originalLine;
             if (choice === 'modified') return row.modifiedLine;
-            if (row.type === 'added') return row.modifiedLine; // Default to keeping additions
-            if (row.type === 'removed') return ''; // Default to removing deletions
-            return row.originalLine; // Unchanged lines
+            if (row.type === 'added') return row.modifiedLine;
+            if (row.type === 'removed') return '';
+            return row.originalLine;
         })
         .filter(line => line !== '')
         .join('\n');
@@ -225,17 +536,17 @@ export default function Home() {
   const copyMergedResult = () => {
     const merged = getMergedResult();
     navigator.clipboard.writeText(merged).then(() => {
-      alert('Merged result copied to clipboard!');
+      setCopyStatus('Merged Copied!');
+      setTimeout(() => setCopyStatus('Copy Diff Result'), 2000);
     });
   };
 
   const handleDiffTypeChange = (value: string) => {
     setDiffType(value);
-    // Re-run diff when type changes, but only if there is text
     if (originalText && modifiedText) {
-        runDiff();
+        runDiff(value);
     }
-  }
+  };
 
   return (
     <TooltipProvider>
@@ -251,7 +562,29 @@ export default function Home() {
                     </div>
                     <h2 className='text-lg font-bold leading-tight tracking-[-0.015em]'>DiffChecker</h2>
                   </div>
-                  <ModeToggle />
+                  <div className='flex items-center gap-2'>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant='ghost' size='icon'>
+                          <Keyboard className='h-5 w-5' />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+                          <DialogDescription>
+                            <div className='space-y-2 mt-4'>
+                              <div className='flex justify-between'><span>Run Diff</span><kbd className='px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded'>Ctrl/Cmd + Enter</kbd></div>
+                              <div className='flex justify-between'><span>Focus Search</span><kbd className='px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded'>Ctrl/Cmd + K</kbd></div>
+                              <div className='flex justify-between'><span>Copy Diff</span><kbd className='px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded'>Ctrl/Cmd + Shift + C</kbd></div>
+                              <div className='flex justify-between'><span>Copy Merged</span><kbd className='px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded'>Ctrl/Cmd + Shift + M</kbd></div>
+                            </div>
+                          </DialogDescription>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+                    <ModeToggle />
+                  </div>
                 </header>
 
                 <main className='flex flex-col gap-8 px-4'>
@@ -260,11 +593,23 @@ export default function Home() {
                       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                         <div className='flex flex-col gap-2'>
                           <Label htmlFor='original-text' className='text-base font-medium leading-normal'>Original Text</Label>
-                          <Textarea id='original-text' placeholder='Paste the original text here.' className='h-64 font-mono' value={originalText} onChange={(e) => setOriginalText(e.target.value)} />
+                          <Textarea
+                            id='original-text'
+                            placeholder='Paste the original text here.'
+                            className='h-64 font-mono'
+                            value={originalText}
+                            onChange={(e) => setOriginalText(e.target.value)}
+                          />
                         </div>
                         <div className='flex flex-col gap-2'>
                           <Label htmlFor='modified-text' className='text-base font-medium leading-normal'>Modified Text</Label>
-                          <Textarea id='modified-text' placeholder='Paste the modified text here.' className='h-64 font-mono' value={modifiedText} onChange={(e) => setModifiedText(e.target.value)} />
+                          <Textarea
+                            id='modified-text'
+                            placeholder='Paste the modified text here.'
+                            className='h-64 font-mono'
+                            value={modifiedText}
+                            onChange={(e) => setModifiedText(e.target.value)}
+                          />
                         </div>
                       </div>
                     </CardContent>
@@ -273,124 +618,356 @@ export default function Home() {
                   <div className='flex flex-col items-center justify-center gap-6 pt-2'>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button onClick={runDiff} className='w-full sm:w-auto' disabled={!originalText || !modifiedText}>
+                        <Button onClick={() => runDiff()} className='w-full sm:w-auto' disabled={!originalText || !modifiedText}>
                           Run Diff
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent><p>Compare the original and modified text</p></TooltipContent>
+                      <TooltipContent><p>Compare the original and modified text (Ctrl/Cmd + Enter)</p></TooltipContent>
                     </Tooltip>
                   </div>
-                  
+
                   {diffResult && (
-                    <Card>
-                      <CardContent className='p-6'>
-                        <div className='flex flex-col gap-4'>
-                          <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
-                            <h3 className='text-lg font-bold leading-tight tracking-[-0.015em]'>Results</h3>
-                            <div className='flex flex-wrap items-center gap-x-4 gap-y-2'>
-                              <Tabs value={diffType} onValueChange={handleDiffTypeChange}>
-                                <TabsList>
-                                  <TabsTrigger value='line'>Line</TabsTrigger>
-                                  <TabsTrigger value='word'>Word</TabsTrigger>
-                                  <TabsTrigger value='character'>Character</TabsTrigger>
-                                </TabsList>
-                              </Tabs>
-                              <div className='flex items-center gap-2'>
-                                <Tooltip><TooltipTrigger asChild><Button variant='outline' size='sm' onClick={copyToClipboard}><Copy className='h-4 w-4 mr-2' />{copyStatus}</Button></TooltipTrigger><TooltipContent><p>Copy the diff result to clipboard</p></TooltipContent></Tooltip>
-                                <Tooltip><TooltipTrigger asChild><Button variant='outline' size='sm' onClick={downloadJSON}><Download className='h-4 w-4 mr-2' />Download Diff as JSON</Button></TooltipTrigger><TooltipContent><p>Download the diff data as a JSON file</p></TooltipContent></Tooltip>
-                                <Tooltip><TooltipTrigger asChild><Button variant='default' size='sm' onClick={copyMergedResult}><Copy className='h-4 w-4 mr-2' />Copy Merged Result</Button></TooltipTrigger><TooltipContent><p>Copy the merged result based on your selections</p></TooltipContent></Tooltip>
-                              </div>
+                    <>
+                      {/* Statistics Card */}
+                      <Card>
+                        <CardContent className='p-4'>
+                          <div className='flex items-center gap-2 mb-2'>
+                            <BarChart3 className='h-5 w-5' />
+                            <h3 className='text-sm font-semibold'>Statistics</h3>
+                          </div>
+                          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                            <div className='text-center'>
+                              <div className='text-2xl font-bold text-green-600 dark:text-green-400'>+{diffStats.additions}</div>
+                              <div className='text-xs text-gray-500'>Additions</div>
+                            </div>
+                            <div className='text-center'>
+                              <div className='text-2xl font-bold text-red-600 dark:text-red-400'>-{diffStats.deletions}</div>
+                              <div className='text-xs text-gray-500'>Deletions</div>
+                            </div>
+                            <div className='text-center'>
+                              <div className='text-2xl font-bold text-yellow-600 dark:text-yellow-400'>~{diffStats.modifications}</div>
+                              <div className='text-xs text-gray-500'>Modifications</div>
+                            </div>
+                            <div className='text-center'>
+                              <div className='text-2xl font-bold text-gray-600 dark:text-gray-400'>{diffStats.unchanged}</div>
+                              <div className='text-xs text-gray-500'>Unchanged</div>
                             </div>
                           </div>
+                        </CardContent>
+                      </Card>
 
-                          <Tabs value={viewType} onValueChange={setViewType}>
-                            <TabsList className='mb-4'>
-                              <TabsTrigger value='side-by-side'><GitCompareArrows className='h-4 w-4 mr-2' />Side-by-side</TabsTrigger>
-                              <TabsTrigger value='inline'><Split className='h-4 w-4 mr-2' />Inline</TabsTrigger>
-                            </TabsList>
-
-                            <TabsContent value='side-by-side'>
-                              {diffType === 'line' ? (
-                                <div className='border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950 font-mono text-sm'>
-                                  {(() => {
-                                    let originalLineNum = 1;
-                                    let modifiedLineNum = 1;
-
-                                    return alignedLineDiff.map((row) => {
-                                      const choice = mergeChoices[row.index];
-                                      const rowClass = `grid grid-cols-[auto_1fr_auto_auto_1fr] border-b border-gray-100 dark:border-gray-800`;
-
-                                      let originalBg = 'bg-white dark:bg-gray-950';
-                                      let modifiedBg = 'bg-white dark:bg-gray-950';
-
-                                      if (choice === 'original') {
-                                        originalBg = 'bg-blue-100 dark:bg-blue-900/30';
-                                      } else if (choice === 'modified') {
-                                        modifiedBg = 'bg-blue-100 dark:bg-blue-900/30';
-                                      } else if (row.type === 'modified') {
-                                        originalBg = 'bg-red-100 dark:bg-red-900/20';
-                                        modifiedBg = 'bg-green-100 dark:bg-green-900/20';
-                                      } else if (row.type === 'removed') {
-                                        originalBg = 'bg-red-100 dark:bg-red-900/20';
-                                      } else if (row.type === 'added') {
-                                        modifiedBg = 'bg-green-100 dark:bg-green-900/20';
-                                      }
-
-                                      return (
-                                        <div key={row.index} className={rowClass}>
-                                          <div className='px-2 py-1 text-right text-gray-400 dark:text-gray-500 select-none w-12'>{row.originalLine !== '' ? originalLineNum++ : ''}</div>
-                                          <div className={`whitespace-pre-wrap p-1 ${originalBg}`} dangerouslySetInnerHTML={{ __html: row.originalHtml }} />
-                                          <div className='flex flex-row items-center justify-center gap-1 w-20'>
-                                            {(row.type === 'modified' || row.type === 'added' || row.type === 'removed') && !choice && (
-                                              <>
-                                                <Tooltip><TooltipTrigger asChild><Button variant='ghost' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(row.index, 'original' )}><ChevronLeft className='h-4 w-4' /></Button></TooltipTrigger><TooltipContent><p>Use original (left)</p></TooltipContent></Tooltip>
-                                                <Tooltip><TooltipTrigger asChild><Button variant='ghost' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(row.index, 'modified' )}><ChevronRight className='h-4 w-4' /></Button></TooltipTrigger><TooltipContent><p>Use modified (right)</p></TooltipContent></Tooltip>
-                                              </>
-                                            )}
-                                          </div>
-                                          <div className='px-2 py-1 text-right text-gray-400 dark:text-gray-500 select-none w-12'>{row.modifiedLine !== '' ? modifiedLineNum++ : ''}</div>
-                                          <div className={`whitespace-pre-wrap p-1 ${modifiedBg}`} dangerouslySetInnerHTML={{ __html: row.modifiedHtml }} />
-                                        </div>
-                                      );
-                                    });
-                                  })()}
+                      <Card>
+                        <CardContent className='p-6'>
+                          <div className='flex flex-col gap-4'>
+                            <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+                              <h3 className='text-lg font-bold leading-tight tracking-[-0.015em]'>Results</h3>
+                              <div className='flex flex-wrap items-center gap-x-4 gap-y-2'>
+                                <Tabs value={diffType} onValueChange={handleDiffTypeChange}>
+                                  <TabsList>
+                                    <TabsTrigger value='line'>Line</TabsTrigger>
+                                    <TabsTrigger value='word'>Word</TabsTrigger>
+                                    <TabsTrigger value='character'>Character</TabsTrigger>
+                                  </TabsList>
+                                </Tabs>
+                                <div className='flex items-center gap-2 flex-wrap'>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant='outline' size='sm' onClick={copyToClipboard}>
+                                        <Copy className='h-4 w-4 mr-2' />{copyStatus}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Copy the diff result to clipboard</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant='outline' size='sm' onClick={downloadJSON}>
+                                        <Download className='h-4 w-4 mr-2' />JSON
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Download as JSON</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant='outline' size='sm' onClick={downloadUnifiedDiff}>
+                                        <FileText className='h-4 w-4 mr-2' />Patch
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Download as unified diff patch</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant='default' size='sm' onClick={copyMergedResult}>
+                                        <Copy className='h-4 w-4 mr-2' />Merged
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Copy merged result</p></TooltipContent>
+                                  </Tooltip>
                                 </div>
-                              ) : (
-                                <div className="grid grid-cols-2 gap-4 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950">
-                                  <div className="p-4 font-mono text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sideBySideDiffHtml.original }} />
-                                  <div className="p-4 font-mono text-sm whitespace-pre-wrap border-l border-gray-200 dark:border-gray-800" dangerouslySetInnerHTML={{ __html: sideBySideDiffHtml.modified }} />
-                                </div>
-                              )}
-                            </TabsContent>
-
-                            <TabsContent value='inline'>
-                              <div className='grid grid-cols-1 gap-px bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64'>
-                                <div className='bg-white dark:bg-gray-950 flex'>
-                                  <div className='bg-gray-50 dark:bg-gray-900 p-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none'>
-                                    {modifiedText.split('\n').map((_, i) => <div key={i}>{i + 1}</div>)}
-                                  </div>
-                                  <div className='p-4 font-mono text-sm whitespace-pre-wrap flex-1' dangerouslySetInnerHTML={{ __html: inlineDiffHtml }} />
-                                </div>
-                              </div>
-                            </TabsContent>
-                          </Tabs>
-
-                          {Object.keys(mergeChoices).length > 0 && (
-                            <div className='mt-6'>
-                              <div className='flex justify-between items-center mb-3'>
-                                <h4 className='text-base font-semibold'>Merged Result</h4>
-                                <Tooltip><TooltipTrigger asChild><Button variant='outline' size='sm' onClick={copyMergedResult}><Copy className='h-4 w-4 mr-2' />Copy Merged</Button></TooltipTrigger><TooltipContent><p>Copy the merged result to clipboard</p></TooltipContent></Tooltip>
-                              </div>
-                              <div className='border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900'>
-                                <pre className='p-4 font-mono text-sm whitespace-pre-wrap max-h-96 overflow-y-auto'>
-                                  {getMergedResult()}
-                                </pre>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+
+                            {/* Search and Controls */}
+                            {diffType === 'line' && (
+                              <div className='flex flex-wrap gap-4 items-center'>
+                                <div className='flex items-center gap-2 flex-1 min-w-[200px]'>
+                                  <Search className='h-4 w-4 text-gray-500' />
+                                  <Input
+                                    id='search-input'
+                                    type='text'
+                                    placeholder='Search in diff...'
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className='flex-1'
+                                  />
+                                </div>
+                                <div className='flex items-center gap-2'>
+                                  <Label htmlFor='sync-scroll' className='text-sm cursor-pointer'>Sync Scroll</Label>
+                                  <input
+                                    id='sync-scroll'
+                                    type='checkbox'
+                                    checked={syncScroll}
+                                    onChange={(e) => setSyncScroll(e.target.checked)}
+                                    className='cursor-pointer'
+                                  />
+                                </div>
+                                <div className='flex items-center gap-2'>
+                                  <Label htmlFor='show-unchanged' className='text-sm cursor-pointer'>Show All</Label>
+                                  <input
+                                    id='show-unchanged'
+                                    type='checkbox'
+                                    checked={showUnchanged}
+                                    onChange={(e) => setShowUnchanged(e.target.checked)}
+                                    className='cursor-pointer'
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            <Tabs value={viewType} onValueChange={setViewType}>
+                              <TabsList className='mb-4'>
+                                <TabsTrigger value='side-by-side'><GitCompareArrows className='h-4 w-4 mr-2' />Side-by-side</TabsTrigger>
+                                <TabsTrigger value='inline'><Split className='h-4 w-4 mr-2' />Inline</TabsTrigger>
+                              </TabsList>
+
+                              <TabsContent value='side-by-side'>
+                                {diffType === 'line' ? (
+                                  <div
+                                    id='split-container'
+                                    className='border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950 font-mono text-sm relative'
+                                  >
+                                    {(() => {
+                                      let originalLineNum = 1;
+                                      let modifiedLineNum = 1;
+
+                                      return filteredLineDiff.map((row, idx) => {
+                                        const choice = mergeChoices[row.index];
+
+                                        // Handle collapsible sections
+                                        if (row.sectionStart && row.sectionSize && row.sectionSize > contextLines * 2) {
+                                          const isCollapsed = collapsedSections.has(row.index);
+                                          const linesToShow = isCollapsed ? contextLines : row.sectionSize;
+
+                                          if (isCollapsed) {
+                                            originalLineNum += row.sectionSize - contextLines;
+                                            modifiedLineNum += row.sectionSize - contextLines;
+
+                                            return (
+                                              <div key={row.index} className='border-b border-gray-100 dark:border-gray-800'>
+                                                <button
+                                                  onClick={() => toggleSection(row.index)}
+                                                  className='w-full py-2 px-4 text-center text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center justify-center gap-2'
+                                                >
+                                                  <ChevronDown className='h-4 w-4' />
+                                                  Expand {row.sectionSize - contextLines} unchanged lines
+                                                </button>
+                                              </div>
+                                            );
+                                          } else if (idx === 0 || filteredLineDiff[idx - contextLines]?.index !== row.index - contextLines) {
+                                            return (
+                                              <div key={row.index} className='border-b border-gray-100 dark:border-gray-800'>
+                                                <button
+                                                  onClick={() => toggleSection(row.index)}
+                                                  className='w-full py-2 px-4 text-center text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center justify-center gap-2'
+                                                >
+                                                  <ChevronUp className='h-4 w-4' />
+                                                  Collapse unchanged lines
+                                                </button>
+                                              </div>
+                                            );
+                                          }
+                                        }
+
+                                        let originalBg = 'bg-white dark:bg-gray-950';
+                                        let modifiedBg = 'bg-white dark:bg-gray-950';
+                                        let originalContent = row.originalHtml;
+                                        let modifiedContent = row.modifiedHtml;
+
+                                        if (choice === 'original') {
+                                          // Show the original line on both sides when original is chosen
+                                          originalBg = 'bg-blue-100 dark:bg-blue-900/30';
+                                          modifiedBg = 'bg-blue-100 dark:bg-blue-900/30';
+                                          // Use plain text without diff highlighting
+                                          const plainOriginal = escapeHtml(row.originalLine);
+                                          originalContent = plainOriginal;
+                                          modifiedContent = plainOriginal;
+                                        } else if (choice === 'modified') {
+                                          // Show the modified line on both sides when modified is chosen
+                                          originalBg = 'bg-blue-100 dark:bg-blue-900/30';
+                                          modifiedBg = 'bg-blue-100 dark:bg-blue-900/30';
+                                          // Use plain text without diff highlighting
+                                          const plainModified = escapeHtml(row.modifiedLine);
+                                          originalContent = plainModified;
+                                          modifiedContent = plainModified;
+                                        } else if (row.type === 'modified') {
+                                          originalBg = 'bg-red-50 dark:bg-red-900/10';
+                                          modifiedBg = 'bg-green-50 dark:bg-green-900/10';
+                                        } else if (row.type === 'removed') {
+                                          originalBg = 'bg-red-50 dark:bg-red-900/10';
+                                        } else if (row.type === 'added') {
+                                          modifiedBg = 'bg-green-50 dark:bg-green-900/10';
+                                        }
+
+                                        return (
+                                          <div
+                                            key={row.index}
+                                            className='flex border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors'
+                                            style={{ display: 'grid', gridTemplateColumns: `minmax(40px,auto) ${splitRatio}fr minmax(60px,auto) ${100-splitRatio}fr minmax(40px,auto)` }}
+                                          >
+                                            <div className='px-2 py-1 text-right text-gray-400 dark:text-gray-500 select-none border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'>
+                                              {row.originalLine !== '' ? originalLineNum++ : ''}
+                                            </div>
+                                            <div
+                                              ref={idx === 0 ? leftScrollRef : null}
+                                              className={`whitespace-pre-wrap py-1 pl-2 pr-8 overflow-x-auto ${originalBg}`}
+                                              dangerouslySetInnerHTML={{ __html: originalContent }}
+                                            />
+                                            <div
+                                              className='relative bg-gray-200 dark:bg-gray-700 cursor-col-resize hover:bg-blue-400 dark:hover:bg-blue-600 transition-colors min-w-[60px]'
+                                              onMouseDown={handleMouseDown}
+                                            >
+                                              {(row.type === 'modified' || row.type === 'added' || row.type === 'removed') && (
+                                                <div className='absolute inset-0 flex items-center justify-center gap-1'>
+                                                  {!choice ? (
+                                                    <>
+                                                      <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                          <button
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              handleMergeChoice(row.index, 'original');
+                                                            }}
+                                                            className='p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded bg-white dark:bg-gray-800 shadow-sm'
+                                                          >
+                                                            <ChevronLeft className='h-3.5 w-3.5' />
+                                                          </button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Use original (left)</p></TooltipContent>
+                                                      </Tooltip>
+                                                      <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                          <button
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              handleMergeChoice(row.index, 'modified');
+                                                            }}
+                                                            className='p-1 hover:bg-blue-100 dark:hover:bg-blue-900 rounded bg-white dark:bg-gray-800 shadow-sm'
+                                                          >
+                                                            <ChevronRight className='h-3.5 w-3.5' />
+                                                          </button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Use modified (right)</p></TooltipContent>
+                                                      </Tooltip>
+                                                    </>
+                                                  ) : (
+                                                    <Tooltip>
+                                                      <TooltipTrigger asChild>
+                                                        <button
+                                                          onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setMergeChoices((prev) => {
+                                                              const newChoices = { ...prev };
+                                                              delete newChoices[row.index];
+                                                              return newChoices;
+                                                            });
+                                                          }}
+                                                          className='px-2 py-1 text-xs hover:bg-blue-100 dark:hover:bg-blue-900 rounded bg-blue-500 dark:bg-blue-600 text-white shadow-sm font-medium'
+                                                        >
+                                                          Reset
+                                                        </button>
+                                                      </TooltipTrigger>
+                                                      <TooltipContent><p>Reset merge choice</p></TooltipContent>
+                                                    </Tooltip>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div
+                                              ref={idx === 0 ? rightScrollRef : null}
+                                              className={`whitespace-pre-wrap py-1 pl-8 pr-2 overflow-x-auto ${modifiedBg}`}
+                                              dangerouslySetInnerHTML={{ __html: modifiedContent }}
+                                            />
+                                            <div className='px-2 py-1 text-right text-gray-400 dark:text-gray-500 select-none border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'>
+                                              {row.modifiedLine !== '' ? modifiedLineNum++ : ''}
+                                            </div>
+                                          </div>
+                                        );
+                                      });
+                                    })()}
+                                  </div>
+                                ) : (
+                                  <div className="grid grid-cols-2 gap-0 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950">
+                                    <div
+                                      ref={leftScrollRef}
+                                      onScroll={handleScroll('left')}
+                                      className="p-4 font-mono text-sm whitespace-pre-wrap overflow-auto max-h-[600px]"
+                                      dangerouslySetInnerHTML={{ __html: sideBySideDiffHtml.original }}
+                                    />
+                                    <div
+                                      ref={rightScrollRef}
+                                      onScroll={handleScroll('right')}
+                                      className="p-4 font-mono text-sm whitespace-pre-wrap border-l border-gray-200 dark:border-gray-800 overflow-auto max-h-[600px]"
+                                      dangerouslySetInnerHTML={{ __html: sideBySideDiffHtml.modified }}
+                                    />
+                                  </div>
+                                )}
+                              </TabsContent>
+
+                              <TabsContent value='inline'>
+                                <div className='grid grid-cols-1 gap-px bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64'>
+                                  <div className='bg-white dark:bg-gray-950 flex'>
+                                    <div className='bg-gray-50 dark:bg-gray-900 px-3 py-2 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none border-r border-gray-200 dark:border-gray-800'>
+                                      {modifiedText.split('\n').map((_, i) => <div key={i} className='leading-6'>{i + 1}</div>)}
+                                    </div>
+                                    <div className='p-4 font-mono text-sm whitespace-pre-wrap flex-1 leading-6' dangerouslySetInnerHTML={{ __html: inlineDiffHtml }} />
+                                  </div>
+                                </div>
+                              </TabsContent>
+                            </Tabs>
+
+                            {Object.keys(mergeChoices).length > 0 && (
+                              <div className='mt-6'>
+                                <div className='flex justify-between items-center mb-3'>
+                                  <h4 className='text-base font-semibold'>Merged Result</h4>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant='outline' size='sm' onClick={copyMergedResult}>
+                                        <Copy className='h-4 w-4 mr-2' />Copy Merged
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Copy the merged result to clipboard</p></TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <div className='border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900'>
+                                  <pre className='p-4 font-mono text-sm whitespace-pre-wrap max-h-96 overflow-y-auto'>
+                                    {getMergedResult()}
+                                  </pre>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
                   )}
                 </main>
               </div>
