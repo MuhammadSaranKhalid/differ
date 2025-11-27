@@ -71,6 +71,150 @@ export default function Home() {
     setDiffResult({ original, modified, raw: diff });
   };
 
+  // Get word-level diff for a specific line comparison
+  const getWordDiff = (oldLine: string, newLine: string) => {
+    const wordDiff = diffWords(oldLine, newLine);
+    return wordDiff;
+  };
+
+  // Process line-based diff to create aligned side-by-side view
+  const getAlignedLineDiff = () => {
+    if (!diffResult || diffType !== 'line') return [];
+
+    const lineDiff = diffResult.raw;
+    const alignedRows: Array<{
+      originalLine: string;
+      modifiedLine: string;
+      originalHtml: string;
+      modifiedHtml: string;
+      type: 'unchanged' | 'modified' | 'added' | 'removed';
+      index: number;
+    }> = [];
+
+    const escapeHtml = (text: string) => {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    let index = 0;
+    let i = 0;
+
+    while (i < lineDiff.length) {
+      const part = lineDiff[i];
+      const lines = part.value.split('\n').filter((line, idx, arr) => idx < arr.length - 1 || line !== '');
+
+      if (!part.added && !part.removed) {
+        // Unchanged lines
+        lines.forEach(line => {
+          alignedRows.push({
+            originalLine: line,
+            modifiedLine: line,
+            originalHtml: escapeHtml(line),
+            modifiedHtml: escapeHtml(line),
+            type: 'unchanged',
+            index: index++
+          });
+        });
+        i++;
+      } else if (part.removed) {
+        // Check if next part is added (modification)
+        const nextPart = lineDiff[i + 1];
+        const removedLines = lines;
+
+        if (nextPart && nextPart.added) {
+          const addedLines = nextPart.value.split('\n').filter((line, idx, arr) => idx < arr.length - 1 || line !== '');
+          const maxLines = Math.max(removedLines.length, addedLines.length);
+
+          for (let j = 0; j < maxLines; j++) {
+            const oldLine = removedLines[j] || '';
+            const newLine = addedLines[j] || '';
+
+            if (oldLine && newLine) {
+              // Both lines exist - show word-level diff
+              const wordDiff = getWordDiff(oldLine, newLine);
+              let oldHtml = '';
+              let newHtml = '';
+
+              wordDiff.forEach(part => {
+                const escaped = escapeHtml(part.value);
+                if (part.removed) {
+                  oldHtml += `<span class="bg-red-300 dark:bg-red-700">${escaped}</span>`;
+                } else if (part.added) {
+                  newHtml += `<span class="bg-green-300 dark:bg-green-700">${escaped}</span>`;
+                } else {
+                  oldHtml += escaped;
+                  newHtml += escaped;
+                }
+              });
+
+              alignedRows.push({
+                originalLine: oldLine,
+                modifiedLine: newLine,
+                originalHtml: oldHtml,
+                modifiedHtml: newHtml,
+                type: 'modified',
+                index: index++
+              });
+            } else if (oldLine) {
+              // Only old line exists - removed
+              alignedRows.push({
+                originalLine: oldLine,
+                modifiedLine: '',
+                originalHtml: escapeHtml(oldLine),
+                modifiedHtml: '',
+                type: 'removed',
+                index: index++
+              });
+            } else if (newLine) {
+              // Only new line exists - added
+              alignedRows.push({
+                originalLine: '',
+                modifiedLine: newLine,
+                originalHtml: '',
+                modifiedHtml: escapeHtml(newLine),
+                type: 'added',
+                index: index++
+              });
+            }
+          }
+          i += 2; // Skip both removed and added parts
+        } else {
+          // Only removed lines
+          removedLines.forEach(line => {
+            alignedRows.push({
+              originalLine: line,
+              modifiedLine: '',
+              originalHtml: escapeHtml(line),
+              modifiedHtml: '',
+              type: 'removed',
+              index: index++
+            });
+          });
+          i++;
+        }
+      } else if (part.added) {
+        // Only added lines
+        lines.forEach(line => {
+          alignedRows.push({
+            originalLine: '',
+            modifiedLine: line,
+            originalHtml: '',
+            modifiedHtml: escapeHtml(line),
+            type: 'added',
+            index: index++
+          });
+        });
+        i++;
+      }
+    }
+
+    return alignedRows;
+  };
+
   // Re-run diff when diffType changes
   useEffect(() => {
     if (diffResult) {
@@ -119,6 +263,31 @@ export default function Home() {
   const getMergedResult = () => {
     if (!diffResult) return '';
 
+    if (diffType === 'line') {
+      const alignedRows = getAlignedLineDiff();
+      return alignedRows
+        .map(row => {
+          const choice = mergeChoices[row.index];
+
+          if (row.type === 'unchanged') {
+            return row.originalLine;
+          }
+
+          if (choice === 'original') {
+            return row.originalLine;
+          }
+          if (choice === 'modified') {
+            return row.modifiedLine;
+          }
+
+          // Default: prefer modified version
+          return row.modifiedLine || row.originalLine;
+        })
+        .filter(line => line !== '')
+        .join('\n');
+    }
+
+    // For word and character diff modes
     return diffResult.raw
       .map((part, index) => {
         const choice = mergeChoices[index];
@@ -273,57 +442,48 @@ export default function Home() {
                             {diffType === 'line' ? (
                               <div className='border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden min-h-64 bg-white dark:bg-gray-950'>
                                 {(() => {
+                                  const alignedRows = getAlignedLineDiff();
                                   let originalLineNum = 1;
                                   let modifiedLineNum = 1;
 
-                                  return diffResult.raw.map((part, index) => {
-                                    const isChanged = part.added || part.removed;
-                                    const choice = mergeChoices[index];
-
-                                    const lines = part.value.split('\n');
-                                    const lineCount = lines.length - 1;
-
-                                    const currentOriginalLine = originalLineNum;
-                                    const currentModifiedLine = modifiedLineNum;
-
-                                    if (!part.added) {
-                                      originalLineNum += lineCount;
-                                    }
-                                    if (!part.removed) {
-                                      modifiedLineNum += lineCount;
-                                    }
+                                  return alignedRows.map((row, idx) => {
+                                    const currentOriginalLine = row.originalLine ? originalLineNum++ : null;
+                                    const currentModifiedLine = row.modifiedLine ? modifiedLineNum++ : null;
+                                    const choice = mergeChoices[row.index];
 
                                     return (
                                       <div
-                                        key={index}
+                                        key={idx}
                                         className={`grid grid-cols-[auto_1fr_auto_auto_1fr] gap-2 p-2 border-b border-gray-100 dark:border-gray-800`}
                                       >
-                                        <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none'>
-                                          {choice
-                                            ? lines.slice(0, -1).map((_: string, i: number) => <div key={i} className='leading-5'>{currentOriginalLine + i}</div>)
-                                            : !part.added && lines.slice(0, -1).map((_: string, i: number) => <div key={i} className='leading-5'>{currentOriginalLine + i}</div>)}
+                                        {/* Original line number */}
+                                        <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none min-w-[40px]'>
+                                          {currentOriginalLine && <div className='leading-5'>{currentOriginalLine}</div>}
                                         </div>
 
+                                        {/* Original content */}
                                         <div
                                           className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
                                             choice
                                               ? 'bg-green-50 dark:bg-green-950/30'
-                                              : part.removed
+                                              : row.type === 'modified' || row.type === 'removed'
                                               ? 'bg-red-100 dark:bg-red-900/30'
-                                              : part.added
-                                              ? 'opacity-20'
                                               : ''
                                           }`}
-                                        >
-                                          {choice ? (choice === 'original' ? part.value : part.value) : !part.added && part.value}
-                                        </div>
+                                          dangerouslySetInnerHTML={{
+                                            __html: choice
+                                              ? choice === 'original' ? row.originalHtml : row.modifiedHtml
+                                              : row.originalHtml || '&nbsp;'
+                                          }}
+                                        />
 
+                                        {/* Merge buttons */}
                                         <div className='flex flex-row items-center justify-center gap-1 min-w-[80px]'>
-                                          {isChanged && !choice && (
+                                          {(row.type === 'modified' || row.type === 'added' || row.type === 'removed') && !choice && (
                                             <>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                  <Button variant='outline' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(index, 'original')}>
+                                                  <Button variant='outline' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(row.index, 'original')}>
                                                     <ChevronLeft className='h-3 w-3' />
                                                   </Button>
                                                 </TooltipTrigger>
@@ -331,7 +491,7 @@ export default function Home() {
                                               </Tooltip>
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                  <Button variant='outline' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(index, 'modified')}>
+                                                  <Button variant='outline' size='icon' className='h-6 w-6' onClick={() => handleMergeChoice(row.index, 'modified')}>
                                                     <ChevronRight className='h-3 w-3' />
                                                   </Button>
                                                 </TooltipTrigger>
@@ -341,27 +501,26 @@ export default function Home() {
                                           )}
                                         </div>
 
-                                        <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none'>
-                                          {choice
-                                            ? lines.slice(0, -1).map((_, i) => <div key={i} className='leading-5'>{currentModifiedLine + i}</div>)
-                                            : !part.removed && lines.slice(0, -1).map((_, i) => <div key={i} className='leading-5'>{currentModifiedLine + i}</div>)}
+                                        {/* Modified line number */}
+                                        <div className='bg-gray-50 dark:bg-gray-900 px-2 py-1 text-right text-gray-400 dark:text-gray-500 font-mono text-sm select-none min-w-[40px]'>
+                                          {currentModifiedLine && <div className='leading-5'>{currentModifiedLine}</div>}
                                         </div>
 
+                                        {/* Modified content */}
                                         <div
                                           className={`font-mono text-sm whitespace-pre-wrap p-2 rounded ${
                                             choice
                                               ? 'bg-green-50 dark:bg-green-950/30'
-                                              : part.added
+                                              : row.type === 'modified' || row.type === 'added'
                                               ? 'bg-green-100 dark:bg-green-900/30'
-                                              : part.removed
-                                              ? 'opacity-20'
                                               : ''
                                           }`}
-                                        >
-                                          {choice
-                                            ? choice === 'original' ? (part.removed ? part.value : '') : part.added ? part.value : ''
-                                            : !part.removed && part.value}
-                                        </div>
+                                          dangerouslySetInnerHTML={{
+                                            __html: choice
+                                              ? choice === 'modified' ? row.modifiedHtml : row.originalHtml
+                                              : row.modifiedHtml || '&nbsp;'
+                                          }}
+                                        />
                                       </div>
                                     );
                                   });
