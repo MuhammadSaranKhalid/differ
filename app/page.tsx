@@ -743,6 +743,36 @@ export default function Home() {
                           </div>
                         )}
 
+                        {/* Copy buttons for each side */}
+                        <div className="flex gap-2 mb-2">
+                          <div className="flex-1 flex justify-end pr-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={copyOriginalText}>
+                                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                                  Copy Original
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Copy original text</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="flex-1 flex justify-start pl-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={copyModifiedText}>
+                                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                                  Copy Modified
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Copy modified text</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </div>
+
                         {/* Side-by-side diff view */}
                         <div
                           id="split-container"
