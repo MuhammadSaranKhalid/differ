@@ -1,6 +1,7 @@
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { VantaBackground } from "@/components/vanta-background";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -65,13 +66,13 @@ export default function Home() {
           </div>
         </nav>
 
-        {/* Hero Section with Gradient Background */}
+        {/* Hero Section with 3D Animated Background */}
         <div className="relative w-full flex flex-col items-center justify-center px-5 py-24 md:py-32 overflow-hidden">
-          {/* Animated gradient background */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 animate-gradient" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse" />
-          </div>
+          {/* 3D Vanta.js background */}
+          <VantaBackground />
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-background/90 via-background/80 to-background/90" />
 
           <div className="max-w-5xl mx-auto text-center space-y-8 relative">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-sm font-medium text-primary mb-4 hover:scale-105 transition-transform">

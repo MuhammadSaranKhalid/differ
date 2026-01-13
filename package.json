@@ -35,7 +35,9 @@
     "react-dom": "^19.0.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.0",
+    "three": "^0.182.0",
     "use-debounce": "^10.0.6",
+    "vanta": "^0.5.24",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
