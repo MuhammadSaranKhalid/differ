@@ -4,7 +4,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
-import { FileJson, Shield, Zap, Share2, ArrowRight } from "lucide-react";
+import { FileJson, Shield, Zap, Share2, ArrowRight, Code2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Metadata } from "next";
@@ -41,139 +41,182 @@ export default function Home() {
 
       <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
+        {/* Enhanced Navigation */}
+        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
             <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"} className="flex items-center gap-2">
-                <FileJson className="h-5 w-5" />
-                JSON Differ
+              <Link href={"/"} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                  <FileJson className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <span className="text-lg font-bold">JSON Differ</span>
               </Link>
             </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
+            <div className="flex items-center gap-4">
+              <ThemeSwitcher />
+              {!hasEnvVars ? (
+                <EnvVarWarning />
+              ) : (
+                <Suspense>
+                  <AuthButton />
+                </Suspense>
+              )}
+            </div>
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <div className="flex-1 w-full flex flex-col items-center justify-center px-5 py-20">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
+        {/* Hero Section with Gradient Background */}
+        <div className="relative w-full flex flex-col items-center justify-center px-5 py-24 md:py-32 overflow-hidden">
+          {/* Animated gradient background */}
+          <div className="absolute inset-0 -z-10">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 animate-gradient" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse" />
+          </div>
+
+          <div className="max-w-5xl mx-auto text-center space-y-8 relative">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-sm font-medium text-primary mb-4 hover:scale-105 transition-transform">
               <Shield className="h-4 w-4" />
-              100% Privacy-First
+              <span>100% Privacy-First • Client-Side Processing</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
               Compare JSON Files
               <br />
-              <span className="text-primary">Instantly & Privately</span>
+              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Instantly & Privately
+              </span>
             </h1>
 
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Professional JSON diff tool with VS Code-powered editor.
+              <br className="hidden md:block" />
               All processing happens in your browser - your data never leaves your device.
             </p>
 
-            <div className="flex items-center justify-center gap-4 pt-4">
+            <div className="flex items-center justify-center pt-6">
               <Link href="/differ">
-                <Button size="lg" className="text-lg px-8">
+                <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
                   Start Comparing
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/differ">
-                <Button size="lg" variant="outline" className="text-lg px-8">
-                  View Demo
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </div>
-          </div>
 
-          {/* Features */}
-          <div className="max-w-5xl mx-auto mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-primary" />
+            {/* Trust indicators */}
+            <div className="flex flex-wrap items-center justify-center gap-8 pt-8 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span>50,000+ Developers</span>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Privacy First</h3>
-              <p className="text-sm text-muted-foreground">
-                Client-side processing only. Your sensitive data stays in your browser and never touches our servers.
-              </p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Zap className="h-6 w-6 text-primary" />
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span>100% Free Forever</span>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Powerful Editor</h3>
-              <p className="text-sm text-muted-foreground">
-                VS Code Monaco editor with syntax highlighting, validation, and support for massive files up to 10MB+.
-              </p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Share2 className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">Share & Collaborate</h3>
-              <p className="text-sm text-muted-foreground">
-                Generate shareable links for your diffs. Perfect for code reviews and team collaboration.
-              </p>
-            </Card>
-          </div>
-
-          {/* Advanced Features */}
-          <div className="max-w-5xl mx-auto mt-12">
-            <h2 className="text-2xl font-bold text-center mb-8">Advanced Features</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Real-time Validation</p>
-                  <p className="text-muted-foreground">Instant syntax error detection with line numbers</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Smart Formatting</p>
-                  <p className="text-muted-foreground">Auto-prettify minified JSON with one click</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Ignore Options</p>
-                  <p className="text-muted-foreground">Ignore key order, array order, or specific keys</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">Export & Download</p>
-                  <p className="text-muted-foreground">Copy to clipboard or download as JSON files</p>
-                </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span>No Login Required</span>
               </div>
             </div>
           </div>
 
-          {/* SEO Content Section - Visible to search engines and users */}
-          <div className="max-w-5xl mx-auto mt-20 space-y-12">
+        </div>
+
+        {/* Features Section */}
+        <div className="w-full bg-muted/30 py-20">
+          <div className="max-w-7xl mx-auto px-5">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose JSON Differ?</h2>
+              <p className="text-muted-foreground text-lg">Everything you need for professional JSON comparison</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50 group">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Shield className="h-7 w-7 text-primary-foreground" />
+                </div>
+                <h3 className="font-bold text-xl mb-3">Privacy First</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Client-side processing only. Your sensitive data stays in your browser and never touches our servers.
+                </p>
+              </Card>
+
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50 group">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Zap className="h-7 w-7 text-primary-foreground" />
+                </div>
+                <h3 className="font-bold text-xl mb-3">Powerful Editor</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  VS Code Monaco editor with syntax highlighting, validation, and support for massive files up to 10MB+.
+                </p>
+              </Card>
+
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50 group">
+                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Share2 className="h-7 w-7 text-primary-foreground" />
+                </div>
+                <h3 className="font-bold text-xl mb-3">Share & Collaborate</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Generate shareable links for your diffs. Perfect for code reviews and team collaboration.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Advanced Features */}
+        <div className="w-full py-20 px-5">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Advanced Features</h2>
+              <p className="text-muted-foreground text-lg">Powerful tools for every use case</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">Real-time Validation</p>
+                  <p className="text-sm text-muted-foreground">Instant syntax error detection with line numbers</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Code2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">Smart Formatting</p>
+                  <p className="text-sm text-muted-foreground">Auto-prettify minified JSON with one click</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <FileJson className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">Ignore Options</p>
+                  <p className="text-sm text-muted-foreground">Ignore key order, array order, or specific keys</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Share2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold mb-1">Export & Download</p>
+                  <p className="text-sm text-muted-foreground">Copy to clipboard or download as JSON files</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SEO Content Section - Visible to search engines and users */}
+        <div className="w-full bg-muted/30 py-20 px-5">
+          <div className="max-w-5xl mx-auto space-y-12">
             {/* What is JSON Differ */}
             <section className="prose prose-slate dark:prose-invert max-w-none">
               <h2 className="text-3xl font-bold mb-4">What is JSON Differ?</h2>
@@ -326,19 +369,105 @@ export default function Home() {
           </div>
         </div>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
-          </p>
-          <ThemeSwitcher />
+        {/* Enhanced Footer */}
+        <footer className="w-full border-t bg-muted/50">
+          <div className="max-w-7xl mx-auto px-5 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              {/* Brand */}
+              <div className="space-y-4">
+                <Link href="/" className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                    <FileJson className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <span className="text-lg font-bold">JSON Differ</span>
+                </Link>
+                <p className="text-sm text-muted-foreground">
+                  Professional JSON comparison tool for developers. Compare, validate, and transform JSON with confidence.
+                </p>
+              </div>
+
+              {/* Product */}
+              <div>
+                <h3 className="font-semibold mb-4">Product</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <Link href="/differ" className="hover:text-foreground transition-colors">
+                      Compare JSON
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/differ" className="hover:text-foreground transition-colors">
+                      Features
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/differ" className="hover:text-foreground transition-colors">
+                      Demo
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Resources */}
+              <div>
+                <h3 className="font-semibold mb-4">Resources</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <a href="#faq" className="hover:text-foreground transition-colors">
+                      FAQ
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#how-to" className="hover:text-foreground transition-colors">
+                      Documentation
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#use-cases" className="hover:text-foreground transition-colors">
+                      Use Cases
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Legal */}
+              <div>
+                <h3 className="font-semibold mb-4">Legal</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <Link href="/" className="hover:text-foreground transition-colors">
+                      Privacy Policy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/" className="hover:text-foreground transition-colors">
+                      Terms of Service
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                © 2024 JSON Differ. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-xs text-muted-foreground">
+                  Powered by{" "}
+                  <a
+                    href="https://supabase.com"
+                    target="_blank"
+                    className="font-bold hover:underline"
+                    rel="noreferrer"
+                  >
+                    Supabase
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
         </footer>
       </div>
     </main>
