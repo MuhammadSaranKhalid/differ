@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Script from "next/script";
 import "./globals.css";
 
 const defaultUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL
@@ -45,6 +46,9 @@ export const metadata: Metadata = {
     email: false,
     address: false,
     telephone: false,
+  },
+  other: {
+    "google-adsense-account": "ca-pub-5918501657114399",
   },
   openGraph: {
     type: "website",
@@ -99,6 +103,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5918501657114399"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+      </head>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider
           attribute="class"
