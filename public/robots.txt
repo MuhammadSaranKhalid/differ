@@ -1,0 +1,46 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://differ.eqautomation.io
+
+# Sitemaps
+Sitemap: https://differ.eqautomation.io/sitemap.xml
+Sitemap: https://differ.eqautomation.io/sitemap-pages.xml
+Sitemap: https://differ.eqautomation.io/sitemap-tools.xml
+
+# Crawl rate
+Crawl-delay: 0
+
+# Allow all search engines to crawl everything
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-Mobile
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Block AI crawlers that don't respect content (optional - remove if you want AI indexing)
+# User-agent: GPTBot
+# Disallow: /
+
+# User-agent: ChatGPT-User
+# Disallow: /
+
+# Allow common paths
+Allow: /differ
+Allow: /api/
+Allow: /tools/
+Allow: /guides/
+Allow: /*.json$
+Allow: /*.js$
+Allow: /*.css$
