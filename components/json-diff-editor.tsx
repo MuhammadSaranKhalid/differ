@@ -44,14 +44,48 @@ export function JsonDiffEditor({
 
   const editorOptions = {
     readOnly,
-    minimap: { enabled: true },
+    minimap: {
+      enabled: true,
+      maxColumn: 80,
+      renderCharacters: false, // Faster rendering
+      showSlider: 'mouseover' as const,
+    },
     fontSize: 14,
+    fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, 'Courier New', monospace",
+    fontLigatures: true, // Enable font ligatures for better code readability
     lineNumbers: 'on' as const,
     scrollBeyondLastLine: false,
     automaticLayout: true,
     wordWrap: 'on' as const,
     formatOnPaste: true,
     formatOnType: true,
+    // Enhanced features
+    bracketPairColorization: {
+      enabled: true, // Color-code matching brackets
+    },
+    guides: {
+      bracketPairs: true, // Show guides for bracket pairs
+      indentation: true, // Show indentation guides
+    },
+    smoothScrolling: true,
+    cursorSmoothCaretAnimation: 'on' as const,
+    cursorBlinking: 'smooth' as const,
+    // Performance improvements
+    suggest: {
+      enabled: true,
+      showSnippets: true,
+    },
+    quickSuggestions: {
+      other: true,
+      comments: false,
+      strings: true,
+    },
+    // Better readability
+    renderWhitespace: 'boundary' as const,
+    renderLineHighlight: 'all' as const,
+    // Better selection
+    selectionHighlight: true,
+    occurrencesHighlight: 'multiFile' as const,
   };
 
   const diffEditorOptions = {

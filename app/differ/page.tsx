@@ -576,479 +576,479 @@ export default function DifferPage() {
     <OnboardingTour>
       <ErrorBoundary>
         <div className="min-h-screen bg-background" data-tour="welcome">
-        {/* Header */}
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileJson className="h-8 w-8 text-primary" />
-                <div>
-                  <h1 className="text-2xl font-bold">JSON Differ</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Compare and analyze JSON differences
-                  </p>
+          {/* Header */}
+          <header className="border-b">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileJson className="h-8 w-8 text-primary" />
+                  <div>
+                    <h1 className="text-2xl font-bold">JSON Differ</h1>
+                    <p className="text-sm text-muted-foreground">
+                      Compare and analyze JSON differences
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-3">
-                <ThemeSwitcher />
-                <TooltipButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowKeyboardShortcuts(true)}
-                  tooltip="View all keyboard shortcuts (?)"
-                >
-                  <Keyboard className="h-4 w-4" />
-                </TooltipButton>
-                <TooltipButton
-                  variant={privacyMode ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPrivacyMode(!privacyMode)}
-                  tooltip={privacyMode ? "All data stays in your browser. Click to disable." : "Enable privacy mode to prevent data from being sent to servers"}
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  {privacyMode ? 'Privacy Mode ON' : 'Privacy Mode OFF'}
-                </TooltipButton>
-                <TooltipButton
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowShareDialog(true)}
-                  disabled={!canCompare || privacyMode}
-                  tooltip={privacyMode ? "Disable privacy mode to share" : "Share your diff with others (Ctrl+S)"}
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </TooltipButton>
-              </div>
-            </div>
-
-            {privacyMode && (
-              <div className="mt-3 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg flex items-start gap-2">
-                <Shield className="h-5 w-5 text-green-600 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-green-600">
-                    Your data is completely private
-                  </p>
-                  <p className="text-xs text-green-600/80">
-                    All processing happens in your browser. No data is sent to our servers.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
-
-        <div className="container mx-auto px-4 py-6">
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4" data-tour="tabs">
-              <TabsTrigger value="compare">
-                <Code className="h-4 w-4 mr-2" />
-                Compare
-              </TabsTrigger>
-              <TabsTrigger value="convert">
-                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                Convert
-              </TabsTrigger>
-              <TabsTrigger value="validate">
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Validate
-              </TabsTrigger>
-              <TabsTrigger value="history">
-                <History className="h-4 w-4 mr-2" />
-                History
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="compare" className="space-y-4">
-              {/* Error Messages */}
-              {!originalValidation.isValid && (
-                <Card className="p-3">
-                  <div className="flex items-start gap-2 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4 mt-0.5" />
-                    <span>
-                      Original JSON Error: {originalValidation.error}
-                      {originalValidation.lineNumber &&
-                        ` (Line ${originalValidation.lineNumber})`}
-                    </span>
-                  </div>
-                </Card>
-              )}
-
-              {!modifiedValidation.isValid && (
-                <Card className="p-3">
-                  <div className="flex items-start gap-2 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4 mt-0.5" />
-                    <span>
-                      Modified JSON Error: {modifiedValidation.error}
-                      {modifiedValidation.lineNumber &&
-                        ` (Line ${modifiedValidation.lineNumber})`}
-                    </span>
-                  </div>
-                </Card>
-              )}
-
-              {/* Options Dialog */}
-              <Dialog open={showSettings} onOpenChange={setShowSettings}>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Comparison Options</DialogTitle>
-                    <DialogDescription>
-                      Configure how JSONs are compared and apply preset configurations
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4">
-                    {/* Presets */}
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Quick Presets</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleApplyPreset('strict')}>
-                          <span>🎯 Strict</span>
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleApplyPreset('flexible')}>
-                          <span>🔄 Flexible</span>
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleApplyPreset('api')}>
-                          <span>🏷️ API Comparison</span>
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleApplyPreset('config')}>
-                          <span>⚙️ Config Files</span>
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Options */}
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="sortKeys"
-                          checked={diffOptions.sortKeys}
-                          onCheckedChange={(checked) =>
-                            setDiffOptions({ ...diffOptions, sortKeys: !!checked })
-                          }
-                        />
-                        <Label htmlFor="sortKeys" className="text-sm cursor-pointer flex items-center gap-1">
-                          Sort keys alphabetically
-                          <HelpIcon content="Alphabetically sorts all JSON keys before comparison. Useful when key order doesn't matter." />
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="ignoreArrayOrder"
-                          checked={diffOptions.ignoreArrayOrder}
-                          onCheckedChange={(checked) =>
-                            setDiffOptions({ ...diffOptions, ignoreArrayOrder: !!checked })
-                          }
-                        />
-                        <Label htmlFor="ignoreArrayOrder" className="text-sm cursor-pointer flex items-center gap-1">
-                          Ignore array order
-                          <HelpIcon content="When enabled, arrays are sorted before comparison, so [1,2,3] will match [3,2,1]." />
-                        </Label>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="ignoreKeys" className="text-sm flex items-center gap-1 mb-2">
-                          Ignore specific keys (comma-separated)
-                          <HelpIcon content="List keys to exclude from comparison, separated by commas. For example: timestamp, id, created_at. These fields will be ignored in the diff." />
-                        </Label>
-                        <Input
-                          id="ignoreKeys"
-                          placeholder="e.g., timestamp, id, created_at"
-                          value={ignoreKeysInput}
-                          onChange={(e) => setIgnoreKeysInput(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Apply Button */}
-                    <div className="flex justify-end pt-4">
-                      <Button onClick={() => { handleApplyOptions(); setShowSettings(false); }}>
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        Apply Options
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Action Buttons */}
-              <div className="relative flex items-center gap-2 mb-4 flex-wrap">
-                {/* Left side buttons */}
-                {undoState && (
+                <div className="flex items-center gap-3">
+                  <ThemeSwitcher />
                   <TooltipButton
-                    onClick={handleUndo}
-                    variant="default"
+                    variant="ghost"
                     size="sm"
-                    tooltip="Restore the content that was just cleared (Ctrl+Z)"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => setShowKeyboardShortcuts(true)}
+                    tooltip="View all keyboard shortcuts (?)"
                   >
-                    <Undo2 className="h-4 w-4 mr-2" />
-                    Undo Clear
+                    <Keyboard className="h-4 w-4" />
                   </TooltipButton>
-                )}
-                <TooltipButton onClick={handleSwap} variant="outline" size="sm" tooltip="Swap the original and modified JSON">
+                  <TooltipButton
+                    variant={privacyMode ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPrivacyMode(!privacyMode)}
+                    tooltip={privacyMode ? "All data stays in your browser. Click to disable." : "Enable privacy mode to prevent data from being sent to servers"}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    {privacyMode ? 'Privacy Mode ON' : 'Privacy Mode OFF'}
+                  </TooltipButton>
+                  <TooltipButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowShareDialog(true)}
+                    disabled={!canCompare || privacyMode}
+                    tooltip={privacyMode ? "Disable privacy mode to share" : "Share your diff with others (Ctrl+S)"}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </TooltipButton>
+                </div>
+              </div>
+
+              {privacyMode && (
+                <div className="mt-3 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg flex items-start gap-2">
+                  <Shield className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-green-600">
+                      Your data is completely private
+                    </p>
+                    <p className="text-xs text-green-600/80">
+                      All processing happens in your browser. No data is sent to our servers.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </header>
+
+          <div className="container mx-auto px-4 py-6">
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4" data-tour="tabs">
+                <TabsTrigger value="compare">
+                  <Code className="h-4 w-4 mr-2" />
+                  Compare
+                </TabsTrigger>
+                <TabsTrigger value="convert">
                   <ArrowLeftRight className="h-4 w-4 mr-2" />
-                  Swap
-                </TooltipButton>
-                <TooltipButton
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSettings(true)}
-                  data-tour="options"
-                  tooltip="Configure comparison options and apply presets"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Options
-                </TooltipButton>
-                <TooltipButton
-                  onClick={() => setShowDiff(!showDiff)}
-                  variant={showDiff ? 'default' : 'outline'}
-                  size="sm"
-                  disabled={!canCompare}
-                  data-tour="show-diff"
-                  tooltip={showDiff ? "Switch back to split editors" : "Toggle to diff view to see highlighted changes (Ctrl+D)"}
-                >
-                  {showDiff ? 'Show Editors' : 'Show Diff'}
-                </TooltipButton>
+                  Convert
+                </TabsTrigger>
+                <TabsTrigger value="validate">
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Validate
+                </TabsTrigger>
+                <TabsTrigger value="history">
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </TabsTrigger>
+              </TabsList>
 
-                {/* Spacer */}
-                <div className="flex-1" />
+              <TabsContent value="compare" className="space-y-4">
+                {/* Error Messages */}
+                {!originalValidation.isValid && (
+                  <Card className="p-3">
+                    <div className="flex items-start gap-2 text-sm text-red-600">
+                      <AlertCircle className="h-4 w-4 mt-0.5" />
+                      <span>
+                        Original JSON Error: {originalValidation.error}
+                        {originalValidation.lineNumber &&
+                          ` (Line ${originalValidation.lineNumber})`}
+                      </span>
+                    </div>
+                  </Card>
+                )}
 
-                {/* Stats Info - Centered */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4 text-sm pointer-events-none">
-                  <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${originalValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className="text-muted-foreground">Original: {originalSize} KB {!originalValidation.isValid && <span className="text-red-500">Invalid</span>}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${modifiedValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className="text-muted-foreground">Modified: {modifiedSize} KB {!modifiedValidation.isValid && <span className="text-red-500">Invalid</span>}</span>
-                  </div>
-                  {/* {canCompare && diffCount > 0 && (
+                {!modifiedValidation.isValid && (
+                  <Card className="p-3">
+                    <div className="flex items-start gap-2 text-sm text-red-600">
+                      <AlertCircle className="h-4 w-4 mt-0.5" />
+                      <span>
+                        Modified JSON Error: {modifiedValidation.error}
+                        {modifiedValidation.lineNumber &&
+                          ` (Line ${modifiedValidation.lineNumber})`}
+                      </span>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Options Dialog */}
+                <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Comparison Options</DialogTitle>
+                      <DialogDescription>
+                        Configure how JSONs are compared and apply preset configurations
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                      {/* Presets */}
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Quick Presets</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleApplyPreset('strict')}>
+                            <span>🎯 Strict</span>
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleApplyPreset('flexible')}>
+                            <span>🔄 Flexible</span>
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleApplyPreset('api')}>
+                            <span>🏷️ API Comparison</span>
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleApplyPreset('config')}>
+                            <span>⚙️ Config Files</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Options */}
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="sortKeys"
+                            checked={diffOptions.sortKeys}
+                            onCheckedChange={(checked) =>
+                              setDiffOptions({ ...diffOptions, sortKeys: !!checked })
+                            }
+                          />
+                          <Label htmlFor="sortKeys" className="text-sm cursor-pointer flex items-center gap-1">
+                            Sort keys alphabetically
+                            <HelpIcon content="Alphabetically sorts all JSON keys before comparison. Useful when key order doesn't matter." />
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="ignoreArrayOrder"
+                            checked={diffOptions.ignoreArrayOrder}
+                            onCheckedChange={(checked) =>
+                              setDiffOptions({ ...diffOptions, ignoreArrayOrder: !!checked })
+                            }
+                          />
+                          <Label htmlFor="ignoreArrayOrder" className="text-sm cursor-pointer flex items-center gap-1">
+                            Ignore array order
+                            <HelpIcon content="When enabled, arrays are sorted before comparison, so [1,2,3] will match [3,2,1]." />
+                          </Label>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="ignoreKeys" className="text-sm flex items-center gap-1 mb-2">
+                            Ignore specific keys (comma-separated)
+                            <HelpIcon content="List keys to exclude from comparison, separated by commas. For example: timestamp, id, created_at. These fields will be ignored in the diff." />
+                          </Label>
+                          <Input
+                            id="ignoreKeys"
+                            placeholder="e.g., timestamp, id, created_at"
+                            value={ignoreKeysInput}
+                            onChange={(e) => setIgnoreKeysInput(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Apply Button */}
+                      <div className="flex justify-end pt-4">
+                        <Button onClick={() => { handleApplyOptions(); setShowSettings(false); }}>
+                          <Wand2 className="h-4 w-4 mr-2" />
+                          Apply Options
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Action Buttons */}
+                <div className="relative flex items-center gap-2 mb-4 flex-wrap">
+                  {/* Left side buttons */}
+                  {undoState && (
+                    <TooltipButton
+                      onClick={handleUndo}
+                      variant="default"
+                      size="sm"
+                      tooltip="Restore the content that was just cleared (Ctrl+Z)"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Undo Clear
+                    </TooltipButton>
+                  )}
+                  <TooltipButton onClick={handleSwap} variant="outline" size="sm" tooltip="Swap the original and modified JSON">
+                    <ArrowLeftRight className="h-4 w-4 mr-2" />
+                    Swap
+                  </TooltipButton>
+                  <TooltipButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSettings(true)}
+                    data-tour="options"
+                    tooltip="Configure comparison options and apply presets"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Options
+                  </TooltipButton>
+                  <TooltipButton
+                    onClick={() => setShowDiff(!showDiff)}
+                    variant={showDiff ? 'default' : 'outline'}
+                    size="sm"
+                    disabled={!canCompare}
+                    data-tour="show-diff"
+                    tooltip={showDiff ? "Switch back to split editors" : "Toggle to diff view to see highlighted changes (Ctrl+D)"}
+                  >
+                    {showDiff ? 'Show Editors' : 'Show Diff'}
+                  </TooltipButton>
+
+                  {/* Spacer */}
+                  <div className="flex-1" />
+
+                  {/* Stats Info - Centered */}
+                  <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4 text-sm pointer-events-none">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-2 w-2 rounded-full ${originalValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span className="text-muted-foreground">Original: {originalSize} KB {!originalValidation.isValid && <span className="text-red-500">Invalid</span>}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-2 w-2 rounded-full ${modifiedValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span className="text-muted-foreground">Modified: {modifiedSize} KB {!modifiedValidation.isValid && <span className="text-red-500">Invalid</span>}</span>
+                    </div>
+                    {/* {canCompare && diffCount > 0 && (
                     <Badge variant="secondary">
                       {diffCount} difference{diffCount !== 1 ? 's' : ''} found
                     </Badge>
                   )} */}
+                  </div>
+
+                  {/* Right side buttons */}
+                  {showDiff && canCompare && (detailedStats.added + detailedStats.removed + detailedStats.modified) > 0 && (
+                    <DiffNavigation
+                      currentIndex={currentDiffIndex}
+                      totalDiffs={detailedStats.added + detailedStats.removed + detailedStats.modified}
+                      onNext={handleNextDiff}
+                      onPrevious={handlePreviousDiff}
+                    />
+                  )}
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <TooltipButton variant="outline" size="sm" disabled={!canCompare} tooltip="Export diff in various formats (JSON, HTML, Markdown, Text)">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </TooltipButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleDownload('both')}>
+                        <FileJson className="h-4 w-4 mr-2" />
+                        Download as JSON
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport('html')}>
+                        <Code className="h-4 w-4 mr-2" />
+                        Export as HTML
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport('markdown')}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export as Markdown
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport('text')}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export as Text
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <TooltipButton
+                    onClick={() => setShowClearConfirm(true)}
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700"
+                    tooltip="Clear both editors (Ctrl+K)"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All
+                  </TooltipButton>
                 </div>
 
-                {/* Right side buttons */}
-                {showDiff && canCompare && (detailedStats.added + detailedStats.removed + detailedStats.modified) > 0 && (
-                  <DiffNavigation
-                    currentIndex={currentDiffIndex}
-                    totalDiffs={detailedStats.added + detailedStats.removed + detailedStats.modified}
-                    onNext={handleNextDiff}
-                    onPrevious={handlePreviousDiff}
-                  />
-                )}
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <TooltipButton variant="outline" size="sm" disabled={!canCompare} tooltip="Export diff in various formats (JSON, HTML, Markdown, Text)">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </TooltipButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleDownload('both')}>
-                      <FileJson className="h-4 w-4 mr-2" />
-                      Download as JSON
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport('html')}>
-                      <Code className="h-4 w-4 mr-2" />
-                      Export as HTML
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport('markdown')}>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Export as Markdown
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport('text')}>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Export as Text
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <TooltipButton
-                  onClick={() => setShowClearConfirm(true)}
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                  tooltip="Clear both editors (Ctrl+K)"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear All
-                </TooltipButton>
-              </div>
-
-              {/* Editor */}
-              <JsonDiffEditor
-                original={original}
-                modified={modified}
-                onOriginalChange={setOriginal}
-                onModifiedChange={setModified}
-                showDiff={showDiff}
-                height="600px"
-                originalFileName={originalFileName}
-                modifiedFileName={modifiedFileName}
-                originalHeaderActions={
-                  showDiff ? (
-                    <TooltipButton
-                      onClick={() => handleCopy('original')}
-                      variant="ghost"
-                      size="sm"
-                      tooltip={copiedState.original ? "Copied!" : "Copy original JSON to clipboard"}
-                      className={`h-7 w-7 p-0 transition-all ${copiedState.original ? 'bg-green-500/20 scale-110' : ''}`}
-                    >
-                      {copiedState.original ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </TooltipButton>
-                  ) : (
-                    <>
-                      <CompactFileUploader
-                        onLoad={(content, fileName) => {
-                          setOriginal(content);
-                          setOriginalFileName(fileName);
-                        }}
-                        accept=".json"
-                      />
+                {/* Editor */}
+                <JsonDiffEditor
+                  original={original}
+                  modified={modified}
+                  onOriginalChange={setOriginal}
+                  onModifiedChange={setModified}
+                  showDiff={showDiff}
+                  height="600px"
+                  originalFileName={originalFileName}
+                  modifiedFileName={modifiedFileName}
+                  originalHeaderActions={
+                    showDiff ? (
                       <TooltipButton
-                        onClick={() => handleFormat('original')}
+                        onClick={() => handleCopy('original')}
                         variant="ghost"
                         size="sm"
-                        tooltip="Auto-format original JSON (Ctrl+B)"
-                        className="h-7 w-7 p-0"
+                        tooltip={copiedState.original ? "Copied!" : "Copy original JSON to clipboard"}
+                        className={`h-7 w-7 p-0 transition-all ${copiedState.original ? 'bg-green-500/20 scale-110' : ''}`}
                       >
-                        <Wand2 className="h-4 w-4" />
+                        {copiedState.original ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
                       </TooltipButton>
-                    </>
-                  )
-                }
-                modifiedHeaderActions={
-                  showDiff ? (
-                    <TooltipButton
-                      onClick={() => handleCopy('modified')}
-                      variant="ghost"
-                      size="sm"
-                      tooltip={copiedState.modified ? "Copied!" : "Copy modified JSON to clipboard"}
-                      className={`h-7 w-7 p-0 transition-all ${copiedState.modified ? 'bg-green-500/20 scale-110' : ''}`}
-                    >
-                      {copiedState.modified ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </TooltipButton>
-                  ) : (
-                    <>
-                      <CompactFileUploader
-                        onLoad={(content, fileName) => {
-                          setModified(content);
-                          setModifiedFileName(fileName);
-                        }}
-                        accept=".json"
-                      />
+                    ) : (
+                      <>
+                        <CompactFileUploader
+                          onLoad={(content, fileName) => {
+                            setOriginal(content);
+                            setOriginalFileName(fileName);
+                          }}
+                          accept=".json"
+                        />
+                        <TooltipButton
+                          onClick={() => handleFormat('original')}
+                          variant="ghost"
+                          size="sm"
+                          tooltip="Auto-format original JSON (Ctrl+B)"
+                          className="h-7 w-7 p-0"
+                        >
+                          <Wand2 className="h-4 w-4" />
+                        </TooltipButton>
+                      </>
+                    )
+                  }
+                  modifiedHeaderActions={
+                    showDiff ? (
                       <TooltipButton
-                        onClick={() => handleFormat('modified')}
+                        onClick={() => handleCopy('modified')}
                         variant="ghost"
                         size="sm"
-                        tooltip="Auto-format modified JSON (Ctrl+B)"
-                        className="h-7 w-7 p-0"
+                        tooltip={copiedState.modified ? "Copied!" : "Copy modified JSON to clipboard"}
+                        className={`h-7 w-7 p-0 transition-all ${copiedState.modified ? 'bg-green-500/20 scale-110' : ''}`}
                       >
-                        <Wand2 className="h-4 w-4" />
+                        {copiedState.modified ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
                       </TooltipButton>
-                    </>
-                  )
-                }
-                onDiffEditorMount={(editor) => {
-                  diffEditorRef.current = editor;
-                  // Reset the current diff index when editor mounts
-                  setCurrentDiffIndex(0);
-                }}
-              />
-            </TabsContent>
-
-            <TabsContent value="convert">
-              <FormatConverterPanel />
-            </TabsContent>
-
-            <TabsContent value="validate">
-              <div className="space-y-4">
-                <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-blue-600">Select JSON to Validate</p>
-                      <p className="text-sm text-blue-600/80 mt-1">
-                        Choose which JSON you want to validate against a schema
-                      </p>
-                      <div className="flex gap-2 mt-3">
-                        <TooltipButton
-                          size="sm"
-                          variant={activeTab === 'validate' ? 'default' : 'outline'}
-                          onClick={() => {
-                            // Already on validate tab, will validate original by default
+                    ) : (
+                      <>
+                        <CompactFileUploader
+                          onLoad={(content, fileName) => {
+                            setModified(content);
+                            setModifiedFileName(fileName);
                           }}
-                          tooltip="Validate the original JSON against a schema"
-                        >
-                          Validate Original JSON
-                        </TooltipButton>
+                          accept=".json"
+                        />
                         <TooltipButton
+                          onClick={() => handleFormat('modified')}
+                          variant="ghost"
                           size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            // Will validate modified JSON
-                          }}
-                          tooltip="Validate the modified JSON against a schema"
+                          tooltip="Auto-format modified JSON (Ctrl+B)"
+                          className="h-7 w-7 p-0"
                         >
-                          Validate Modified JSON
+                          <Wand2 className="h-4 w-4" />
                         </TooltipButton>
+                      </>
+                    )
+                  }
+                  onDiffEditorMount={(editor) => {
+                    diffEditorRef.current = editor;
+                    // Reset the current diff index when editor mounts
+                    setCurrentDiffIndex(0);
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="convert">
+                <FormatConverterPanel />
+              </TabsContent>
+
+              <TabsContent value="validate">
+                <div className="space-y-4">
+                  <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-blue-600">Select JSON to Validate</p>
+                        <p className="text-sm text-blue-600/80 mt-1">
+                          Choose which JSON you want to validate against a schema
+                        </p>
+                        <div className="flex gap-2 mt-3">
+                          <TooltipButton
+                            size="sm"
+                            variant={activeTab === 'validate' ? 'default' : 'outline'}
+                            onClick={() => {
+                              // Already on validate tab, will validate original by default
+                            }}
+                            tooltip="Validate the original JSON against a schema"
+                          >
+                            Validate Original JSON
+                          </TooltipButton>
+                          <TooltipButton
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Will validate modified JSON
+                            }}
+                            tooltip="Validate the modified JSON against a schema"
+                          >
+                            Validate Modified JSON
+                          </TooltipButton>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
 
-                <SchemaValidatorPanel json={original} />
-              </div>
-            </TabsContent>
+                  <SchemaValidatorPanel json={original} />
+                </div>
+              </TabsContent>
 
-            <TabsContent value="history">
-              <UserHistory onLoadDiff={handleLoadFromHistory} />
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="history">
+                <UserHistory onLoadDiff={handleLoadFromHistory} />
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Share Dialog */}
+          <ShareDialog
+            open={showShareDialog}
+            onOpenChange={setShowShareDialog}
+            originalJson={original}
+            modifiedJson={modified}
+          />
+
+          {/* Keyboard Shortcuts Dialog */}
+          <KeyboardShortcutsDialog
+            open={showKeyboardShortcuts}
+            onOpenChange={setShowKeyboardShortcuts}
+          />
+
+          {/* Clear Confirmation Dialog */}
+          <ConfirmDialog
+            open={showClearConfirm}
+            onOpenChange={setShowClearConfirm}
+            onConfirm={() => handleClear('both')}
+            title="Clear Both Editors?"
+            description="This will remove all content from both the original and modified JSON editors. This action cannot be undone."
+            confirmText="Clear All"
+            cancelText="Cancel"
+            variant="destructive"
+          />
         </div>
-
-        {/* Share Dialog */}
-        <ShareDialog
-          open={showShareDialog}
-          onOpenChange={setShowShareDialog}
-          originalJson={original}
-          modifiedJson={modified}
-        />
-
-        {/* Keyboard Shortcuts Dialog */}
-        <KeyboardShortcutsDialog
-          open={showKeyboardShortcuts}
-          onOpenChange={setShowKeyboardShortcuts}
-        />
-
-        {/* Clear Confirmation Dialog */}
-        <ConfirmDialog
-          open={showClearConfirm}
-          onOpenChange={setShowClearConfirm}
-          onConfirm={() => handleClear('both')}
-          title="Clear Both Editors?"
-          description="This will remove all content from both the original and modified JSON editors. This action cannot be undone."
-          confirmText="Clear All"
-          cancelText="Cancel"
-          variant="destructive"
-        />
-      </div>
-    </ErrorBoundary>
+      </ErrorBoundary>
     </OnboardingTour>
   );
 }
