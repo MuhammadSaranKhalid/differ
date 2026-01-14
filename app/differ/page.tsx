@@ -73,6 +73,7 @@ const DiffNavigation = dynamic(
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useDebounce } from 'use-debounce';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { GoogleAd } from '@/components/google-ad';
 import { HelpIcon } from '@/components/help-icon';
 import { Button } from '@/components/ui/button';
 import { TooltipButton } from '@/components/tooltip-button';
@@ -1020,6 +1021,16 @@ export default function DifferPage() {
                 <UserHistory onLoadDiff={handleLoadFromHistory} />
               </TabsContent>
             </Tabs>
+
+            <div className="mt-8 border-t pt-6">
+              <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider text-center">Advertisement</p>
+              <GoogleAd
+                slot="8550579791"
+                format="auto"
+                responsive="true"
+                style={{ display: "block", minHeight: "100px" }}
+              />
+            </div>
           </div>
 
           {/* Share Dialog */}

@@ -1,6 +1,7 @@
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { VantaBackground } from "@/components/vanta-background";
+import { GoogleAd } from "@/components/google-ad";
 
 import Link from "next/link";
 
@@ -588,7 +589,22 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Enhanced Footer */}
+
+          {/* AdSense Ad Section */}
+          <div className="w-full bg-muted/10 py-8 border-t border-b">
+            <div className="max-w-4xl mx-auto text-center px-5">
+              <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider">Advertisement</p>
+              <GoogleAd
+                slot="8550579791"
+                format="auto"
+                responsive="true"
+                style={{ display: "block", minHeight: "100px" }}
+              />
+            </div>
+          </div>
+
+          {/* Enhanced Footer */
+          }
           <footer className="w-full border-t bg-muted/50">
             <div className="max-w-7xl mx-auto px-5 py-12">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
