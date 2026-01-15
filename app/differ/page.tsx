@@ -32,12 +32,17 @@ const SchemaValidatorPanel = dynamic(
   }
 );
 
-const UserHistory = dynamic(
-  () => import('@/components/user-history').then((mod) => ({ default: mod.UserHistory })),
+const LocalHistory = dynamic(
+  () => import('@/components/local-history').then((mod) => ({ default: mod.LocalHistory })),
   {
     ssr: false,
     loading: () => <PanelLoading />
   }
+);
+
+const HistorySidebar = dynamic(
+  () => import('@/components/history-sidebar').then((mod) => ({ default: mod.HistorySidebar })),
+  { ssr: false }
 );
 
 const ShareDialog = dynamic(
@@ -73,7 +78,6 @@ const DiffNavigation = dynamic(
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useDebounce } from 'use-debounce';
 import { ThemeSwitcher } from '@/components/theme-switcher';
-import { GoogleAd } from '@/components/google-ad';
 import { HelpIcon } from '@/components/help-icon';
 import { Button } from '@/components/ui/button';
 import { TooltipButton } from '@/components/tooltip-button';
@@ -143,6 +147,7 @@ export default function DifferPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState('compare');
   const [compareMode, setCompareMode] = useState<'json' | 'text'>('json');
+  const [historySidebarCollapsed, setHistorySidebarCollapsed] = useState(false);
 
   // Ref to store the diff editor instance
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
@@ -578,9 +583,9 @@ export default function DifferPage() {
   return (
     <OnboardingTour>
       <ErrorBoundary>
-        <div className="min-h-screen bg-background" data-tour="welcome">
+        <div className="h-screen flex flex-col bg-background overflow-hidden" data-tour="welcome">
           {/* Header */}
-          <header className="border-b">
+          <header className="border-b shrink-0">
             <div className="container mx-auto px-4 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -641,10 +646,24 @@ export default function DifferPage() {
             </div>
           </header>
 
-          <div className="container mx-auto px-4 py-6">
+          {/* Main layout with sidebar */}
+          <div className="flex flex-1 min-h-0">
+            {/* History Sidebar */}
+            {activeTab === 'compare' && (
+              <HistorySidebar
+                onLoadDiff={handleLoadFromHistory}
+                currentOriginal={original}
+                currentModified={modified}
+                isCollapsed={historySidebarCollapsed}
+                onToggleCollapse={() => setHistorySidebarCollapsed(!historySidebarCollapsed)}
+              />
+            )}
+
+            {/* Main content area */}
+            <div className="flex-1 overflow-auto px-4 py-4">
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4" data-tour="tabs">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
+              <TabsList className="mb-4 shrink-0" data-tour="tabs">
                 <TabsTrigger value="compare">
                   <Code className="h-4 w-4 mr-2" />
                   Compare
@@ -892,7 +911,7 @@ export default function DifferPage() {
                   onOriginalChange={setOriginal}
                   onModifiedChange={setModified}
                   showDiff={showDiff}
-                  height="600px"
+                  height="calc(100vh - 240px)"
                   originalFileName={originalFileName}
                   modifiedFileName={modifiedFileName}
                   originalSize={originalSize}
@@ -1029,18 +1048,13 @@ export default function DifferPage() {
               </TabsContent>
 
               <TabsContent value="history">
-                <UserHistory onLoadDiff={handleLoadFromHistory} />
+                <LocalHistory
+                  onLoadDiff={handleLoadFromHistory}
+                  currentOriginal={original}
+                  currentModified={modified}
+                />
               </TabsContent>
             </Tabs>
-
-            <div className="mt-8 border-t pt-6">
-              <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider text-center">Advertisement</p>
-              <GoogleAd
-                slot="8550579791"
-                format="auto"
-                responsive="true"
-                style={{ display: "block", minHeight: "100px" }}
-              />
             </div>
           </div>
 
