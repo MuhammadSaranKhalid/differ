@@ -100,7 +100,6 @@ import {
   validateJson,
   formatJson,
   processJsonForDiff,
-  countDifferences,
   getJsonSizeKB,
   calculateDetailedDiffStats,
   type DiffOptions,
@@ -126,6 +125,7 @@ import {
   Keyboard,
   Sparkles,
   Undo2,
+  GitCompareArrows,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -142,6 +142,7 @@ export default function DifferPage() {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState('compare');
+  const [compareMode, setCompareMode] = useState<'json' | 'text'>('json');
 
   // Ref to store the diff editor instance
   const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
@@ -168,7 +169,6 @@ export default function DifferPage() {
   const [modifiedValidation, setModifiedValidation] = useState(validateJson(''));
 
   // Stats
-  const [diffCount, setDiffCount] = useState(0);
   const [originalSize, setOriginalSize] = useState(0);
   const [modifiedSize, setModifiedSize] = useState(0);
   const [detailedStats, setDetailedStats] = useState<DetailedDiffStats>({
@@ -194,10 +194,9 @@ export default function DifferPage() {
     setModifiedSize(getJsonSizeKB(debouncedModified));
   }, [debouncedModified]);
 
-  // Update diff count and detailed stats (debounced)
+  // Update detailed stats (debounced)
   useEffect(() => {
     if (originalValidation.isValid && modifiedValidation.isValid) {
-      setDiffCount(countDifferences(debouncedOriginal, debouncedModified));
       setDetailedStats(calculateDetailedDiffStats(debouncedOriginal, debouncedModified));
     } else {
       setDetailedStats({
@@ -474,7 +473,10 @@ export default function DifferPage() {
     setActiveTab('compare');
   }, []);
 
-  const canCompare = originalValidation.isValid && modifiedValidation.isValid;
+  // In JSON mode, require valid JSON on both sides. In text mode, just require content on both sides.
+  const canCompare = compareMode === 'json'
+    ? originalValidation.isValid && modifiedValidation.isValid && original.trim() !== '' && modified.trim() !== ''
+    : original.trim() !== '' && modified.trim() !== '';
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -662,33 +664,6 @@ export default function DifferPage() {
               </TabsList>
 
               <TabsContent value="compare" className="space-y-4">
-                {/* Error Messages */}
-                {!originalValidation.isValid && (
-                  <Card className="p-3">
-                    <div className="flex items-start gap-2 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4 mt-0.5" />
-                      <span>
-                        Original JSON Error: {originalValidation.error}
-                        {originalValidation.lineNumber &&
-                          ` (Line ${originalValidation.lineNumber})`}
-                      </span>
-                    </div>
-                  </Card>
-                )}
-
-                {!modifiedValidation.isValid && (
-                  <Card className="p-3">
-                    <div className="flex items-start gap-2 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4 mt-0.5" />
-                      <span>
-                        Modified JSON Error: {modifiedValidation.error}
-                        {modifiedValidation.lineNumber &&
-                          ` (Line ${modifiedValidation.lineNumber})`}
-                      </span>
-                    </div>
-                  </Card>
-                )}
-
                 {/* Options Dialog */}
                 <Dialog open={showSettings} onOpenChange={setShowSettings}>
                   <DialogContent className="max-w-2xl">
@@ -789,50 +764,77 @@ export default function DifferPage() {
                       Undo Clear
                     </TooltipButton>
                   )}
-                  <TooltipButton onClick={handleSwap} variant="outline" size="sm" tooltip="Swap the original and modified JSON">
+                  <TooltipButton onClick={handleSwap} variant="outline" size="sm" tooltip="Swap the original and modified content">
                     <ArrowLeftRight className="h-4 w-4 mr-2" />
                     Swap
                   </TooltipButton>
-                  <TooltipButton
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowSettings(true)}
-                    data-tour="options"
-                    tooltip="Configure comparison options and apply presets"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Options
-                  </TooltipButton>
+
+                  {/* Mode Toggle - JSON/Text */}
+                  <div className="flex items-center border rounded-md overflow-hidden">
+                    <button
+                      onClick={() => setCompareMode('json')}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                        compareMode === 'json'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <FileJson className="h-3.5 w-3.5 inline mr-1" />
+                      JSON
+                    </button>
+                    <button
+                      onClick={() => setCompareMode('text')}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                        compareMode === 'text'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <FileText className="h-3.5 w-3.5 inline mr-1" />
+                      Text
+                    </button>
+                  </div>
+
+                  {compareMode === 'json' && (
+                    <TooltipButton
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSettings(true)}
+                      data-tour="options"
+                      tooltip="Configure comparison options and apply presets"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Options
+                    </TooltipButton>
+                  )}
+                  {/* Spacer */}
+                  <div className="flex-1" />
+
+                  {/* Primary Compare/Diff Button - Centered */}
                   <TooltipButton
                     onClick={() => setShowDiff(!showDiff)}
-                    variant={showDiff ? 'default' : 'outline'}
-                    size="sm"
+                    variant={showDiff ? 'outline' : 'default'}
+                    size="default"
                     disabled={!canCompare}
                     data-tour="show-diff"
-                    tooltip={showDiff ? "Switch back to split editors" : "Toggle to diff view to see highlighted changes (Ctrl+D)"}
+                    tooltip={showDiff ? "Switch back to split editors" : `Compare ${compareMode === 'json' ? 'JSONs' : 'text'} and highlight differences (Ctrl+D)`}
+                    className={`px-6 font-semibold ${!showDiff ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' : ''}`}
                   >
-                    {showDiff ? 'Show Editors' : 'Show Diff'}
+                    {showDiff ? (
+                      <>
+                        <ArrowLeftRight className="h-4 w-4 mr-2" />
+                        Show Editors
+                      </>
+                    ) : (
+                      <>
+                        <GitCompareArrows className="h-4 w-4 mr-2" />
+                        Compare
+                      </>
+                    )}
                   </TooltipButton>
 
                   {/* Spacer */}
                   <div className="flex-1" />
-
-                  {/* Stats Info - Centered */}
-                  <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4 text-sm pointer-events-none">
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${originalValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <span className="text-muted-foreground">Original: {originalSize} KB {!originalValidation.isValid && <span className="text-red-500">Invalid</span>}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full ${modifiedValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <span className="text-muted-foreground">Modified: {modifiedSize} KB {!modifiedValidation.isValid && <span className="text-red-500">Invalid</span>}</span>
-                    </div>
-                    {/* {canCompare && diffCount > 0 && (
-                    <Badge variant="secondary">
-                      {diffCount} difference{diffCount !== 1 ? 's' : ''} found
-                    </Badge>
-                  )} */}
-                  </div>
 
                   {/* Right side buttons */}
                   {showDiff && canCompare && (detailedStats.added + detailedStats.removed + detailedStats.modified) > 0 && (
@@ -893,13 +895,18 @@ export default function DifferPage() {
                   height="600px"
                   originalFileName={originalFileName}
                   modifiedFileName={modifiedFileName}
+                  originalSize={originalSize}
+                  modifiedSize={modifiedSize}
+                  originalValidation={originalValidation}
+                  modifiedValidation={modifiedValidation}
+                  compareMode={compareMode}
                   originalHeaderActions={
                     showDiff ? (
                       <TooltipButton
                         onClick={() => handleCopy('original')}
                         variant="ghost"
                         size="sm"
-                        tooltip={copiedState.original ? "Copied!" : "Copy original JSON to clipboard"}
+                        tooltip={copiedState.original ? "Copied!" : `Copy original ${compareMode === 'json' ? 'JSON' : 'text'} to clipboard`}
                         className={`h-7 w-7 p-0 transition-all ${copiedState.original ? 'bg-green-500/20 scale-110' : ''}`}
                       >
                         {copiedState.original ? (
@@ -915,17 +922,19 @@ export default function DifferPage() {
                             setOriginal(content);
                             setOriginalFileName(fileName);
                           }}
-                          accept=".json"
+                          accept={compareMode === 'json' ? '.json' : '*'}
                         />
-                        <TooltipButton
-                          onClick={() => handleFormat('original')}
-                          variant="ghost"
-                          size="sm"
-                          tooltip="Auto-format original JSON (Ctrl+B)"
-                          className="h-7 w-7 p-0"
-                        >
-                          <Wand2 className="h-4 w-4" />
-                        </TooltipButton>
+                        {compareMode === 'json' && (
+                          <TooltipButton
+                            onClick={() => handleFormat('original')}
+                            variant="ghost"
+                            size="sm"
+                            tooltip="Auto-format original JSON (Ctrl+B)"
+                            className="h-7 w-7 p-0"
+                          >
+                            <Wand2 className="h-4 w-4" />
+                          </TooltipButton>
+                        )}
                       </>
                     )
                   }
@@ -935,7 +944,7 @@ export default function DifferPage() {
                         onClick={() => handleCopy('modified')}
                         variant="ghost"
                         size="sm"
-                        tooltip={copiedState.modified ? "Copied!" : "Copy modified JSON to clipboard"}
+                        tooltip={copiedState.modified ? "Copied!" : `Copy modified ${compareMode === 'json' ? 'JSON' : 'text'} to clipboard`}
                         className={`h-7 w-7 p-0 transition-all ${copiedState.modified ? 'bg-green-500/20 scale-110' : ''}`}
                       >
                         {copiedState.modified ? (
@@ -951,17 +960,19 @@ export default function DifferPage() {
                             setModified(content);
                             setModifiedFileName(fileName);
                           }}
-                          accept=".json"
+                          accept={compareMode === 'json' ? '.json' : '*'}
                         />
-                        <TooltipButton
-                          onClick={() => handleFormat('modified')}
-                          variant="ghost"
-                          size="sm"
-                          tooltip="Auto-format modified JSON (Ctrl+B)"
-                          className="h-7 w-7 p-0"
-                        >
-                          <Wand2 className="h-4 w-4" />
-                        </TooltipButton>
+                        {compareMode === 'json' && (
+                          <TooltipButton
+                            onClick={() => handleFormat('modified')}
+                            variant="ghost"
+                            size="sm"
+                            tooltip="Auto-format modified JSON (Ctrl+B)"
+                            className="h-7 w-7 p-0"
+                          >
+                            <Wand2 className="h-4 w-4" />
+                          </TooltipButton>
+                        )}
                       </>
                     )
                   }
