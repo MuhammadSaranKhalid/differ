@@ -143,15 +143,15 @@ export function JsonDiffEditor({
     return (
       <div className="relative" style={{ height }}>
         {/* Enhanced gradient background blur effect */}
-        <div className="absolute -inset-4 bg-gradient-to-r from-primary/30 via-primary/20 to-primary/30 rounded-2xl blur-3xl -z-10 opacity-60" />
-        <div className="absolute -inset-2 bg-gradient-to-br from-primary/10 to-transparent rounded-xl -z-10" />
+        <div className="absolute -inset-4 bg-linear-to-r from-primary/30 via-primary/20 to-primary/30 rounded-2xl blur-3xl -z-10 opacity-60" />
+        <div className="absolute -inset-2 bg-linear-to-br from-primary/10 to-transparent rounded-xl -z-10" />
 
-        <Card className="h-full p-1.5 bg-gradient-to-br from-primary/15 via-background to-primary/5 border-2 border-primary/20 shadow-xl shadow-primary/5">
+        <Card className="h-full p-1.5 bg-linear-to-br from-primary/15 via-background to-primary/5 border-2 border-primary/20 shadow-xl shadow-primary/5">
           <div className="h-full bg-card rounded-lg overflow-hidden flex flex-col shadow-inner">
             {/* Panel Headers for Original and Modified */}
             <div className="grid grid-cols-2 border-b">
               {/* Original Header */}
-              <div className={`px-4 py-2.5 flex flex-col gap-1 border-r-2 border-primary/10 ${compareMode === 'json' && !originalValidation.isValid ? 'bg-red-500/10' : 'bg-gradient-to-r from-muted/30 to-transparent'}`}>
+              <div className={`px-4 py-2.5 flex flex-col gap-1 border-r-2 border-primary/10 ${compareMode === 'json' && !originalValidation.isValid ? 'bg-red-500/10' : 'bg-linear-to-r from-muted/30 to-transparent'}`}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-2 h-2 rounded-full ${compareMode === 'text' || originalValidation.isValid ? 'bg-blue-500' : 'bg-red-500'}`} />
@@ -162,7 +162,7 @@ export function JsonDiffEditor({
                     <span className="text-xs text-muted-foreground/70 font-normal">({originalSize} KB)</span>
                   </div>
                   {originalHeaderActions && (
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {originalHeaderActions}
                     </div>
                   )}
@@ -174,7 +174,7 @@ export function JsonDiffEditor({
                 )}
               </div>
               {/* Modified Header */}
-              <div className={`px-4 py-2.5 flex flex-col gap-1 ${compareMode === 'json' && !modifiedValidation.isValid ? 'bg-red-500/10' : 'bg-gradient-to-r from-muted/30 to-transparent'}`}>
+              <div className={`px-4 py-2.5 flex flex-col gap-1 ${compareMode === 'json' && !modifiedValidation.isValid ? 'bg-red-500/10' : 'bg-linear-to-r from-muted/30 to-transparent'}`}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-2 h-2 rounded-full ${compareMode === 'text' || modifiedValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -185,7 +185,7 @@ export function JsonDiffEditor({
                     <span className="text-xs text-muted-foreground/70 font-normal">({modifiedSize} KB)</span>
                   </div>
                   {modifiedHeaderActions && (
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {modifiedHeaderActions}
                     </div>
                   )}
@@ -223,7 +223,7 @@ export function JsonDiffEditor({
             </div>
 
             {/* Editor Footer */}
-            <div className="px-4 py-2.5 border-t bg-gradient-to-r from-muted/50 to-muted/30 flex items-center justify-between text-xs text-muted-foreground">
+            <div className="px-4 py-2.5 border-t bg-linear-to-r from-muted/50 to-muted/30 flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-medium">Comparing {compareMode === 'json' ? 'JSON' : 'text'} files</span>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -239,16 +239,16 @@ export function JsonDiffEditor({
   return (
     <div className="relative" style={{ height }}>
       {/* Enhanced gradient background blur effect */}
-      <div className="absolute -inset-4 bg-gradient-to-r from-primary/30 via-primary/20 to-primary/30 rounded-2xl blur-3xl -z-10 opacity-60" />
-      <div className="absolute -inset-2 bg-gradient-to-br from-primary/10 to-transparent rounded-xl -z-10" />
+      <div className="absolute -inset-4 bg-linear-to-r from-primary/30 via-primary/20 to-primary/30 rounded-2xl blur-3xl -z-10 opacity-60" />
+      <div className="absolute -inset-2 bg-linear-to-br from-primary/10 to-transparent rounded-xl -z-10" />
 
-      <Card className="h-full p-1.5 bg-gradient-to-br from-primary/15 via-background to-primary/5 border-2 border-primary/20 shadow-xl shadow-primary/5">
+      <Card className="h-full p-1.5 bg-linear-to-br from-primary/15 via-background to-primary/5 border-2 border-primary/20 shadow-xl shadow-primary/5">
         <div className="h-full bg-card rounded-lg overflow-hidden flex flex-col shadow-inner">
           {/* Split Editor View */}
           <div className="flex-1 grid grid-cols-2">
             {/* Left Panel - Original */}
             <div className="flex flex-col bg-background/50 relative border-r-2 border-primary/10">
-              <div className={`px-4 py-2.5 border-b flex flex-col gap-1 ${compareMode === 'json' && !originalValidation.isValid ? 'bg-red-500/10' : 'bg-gradient-to-r from-muted/30 to-transparent'}`}>
+              <div className={`px-4 py-2.5 border-b flex flex-col gap-1 ${compareMode === 'json' && !originalValidation.isValid ? 'bg-red-500/10' : 'bg-linear-to-r from-muted/30 to-transparent'}`}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-2 h-2 rounded-full ${compareMode === 'text' || originalValidation.isValid ? 'bg-blue-500' : 'bg-red-500'}`} />
@@ -259,7 +259,7 @@ export function JsonDiffEditor({
                     <span className="text-xs text-muted-foreground/70 font-normal">({originalSize} KB)</span>
                   </div>
                   {originalHeaderActions && (
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {originalHeaderActions}
                     </div>
                   )}
@@ -272,14 +272,15 @@ export function JsonDiffEditor({
               </div>
               <div className="flex-1 relative">
                 {!original.trim() && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 bg-background/70">
-                    <div className="text-center space-y-3 text-muted-foreground px-6 py-8 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/20">
-                      <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-2xl">{compareMode === 'json' ? '📄' : '📝'}</span>
-                      </div>
-                      <p className="text-sm font-medium">Paste your {compareMode === 'json' ? 'JSON' : 'text'} here</p>
-                      <p className="text-xs">or drag & drop a file</p>
-                      {compareMode === 'json' && <p className="text-xs text-primary/70 italic">Tip: Press Ctrl+B to format</p>}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <div className="text-center space-y-2 text-muted-foreground/60">
+                      <p className="text-sm">Paste or type your {compareMode === 'json' ? 'JSON' : 'text'} here</p>
+                      <p className="text-xs text-muted-foreground/40">or drag & drop a file</p>
+                      {compareMode === 'json' && (
+                        <p className="text-xs text-muted-foreground/40">
+                          <kbd className="px-1.5 py-0.5 text-[10px] bg-muted/50 rounded border border-border/50">Ctrl+B</kbd> to format
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -304,7 +305,7 @@ export function JsonDiffEditor({
 
             {/* Right Panel - Modified */}
             <div className="flex flex-col bg-background/50 relative">
-              <div className={`px-4 py-2.5 border-b flex flex-col gap-1 ${compareMode === 'json' && !modifiedValidation.isValid ? 'bg-red-500/10' : 'bg-gradient-to-r from-muted/30 to-transparent'}`}>
+              <div className={`px-4 py-2.5 border-b flex flex-col gap-1 ${compareMode === 'json' && !modifiedValidation.isValid ? 'bg-red-500/10' : 'bg-linear-to-r from-muted/30 to-transparent'}`}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-2 h-2 rounded-full ${compareMode === 'text' || modifiedValidation.isValid ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -315,7 +316,7 @@ export function JsonDiffEditor({
                     <span className="text-xs text-muted-foreground/70 font-normal">({modifiedSize} KB)</span>
                   </div>
                   {modifiedHeaderActions && (
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {modifiedHeaderActions}
                     </div>
                   )}
@@ -328,13 +329,15 @@ export function JsonDiffEditor({
               </div>
               <div className="flex-1 relative">
                 {!modified.trim() && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 bg-background/70">
-                    <div className="text-center space-y-3 text-muted-foreground px-6 py-8 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/20">
-                      <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-2xl">{compareMode === 'json' ? '📝' : '📄'}</span>
-                      </div>
-                      <p className="text-sm font-medium">Paste your modified {compareMode === 'json' ? 'JSON' : 'text'} here</p>
-                      <p className="text-xs">or drag & drop a file</p>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <div className="text-center space-y-2 text-muted-foreground/60">
+                      <p className="text-sm">Paste or type your modified {compareMode === 'json' ? 'JSON' : 'text'} here</p>
+                      <p className="text-xs text-muted-foreground/40">or drag & drop a file</p>
+                      {compareMode === 'json' && (
+                        <p className="text-xs text-muted-foreground/40">
+                          <kbd className="px-1.5 py-0.5 text-[10px] bg-muted/50 rounded border border-border/50">Ctrl+B</kbd> to format
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -359,7 +362,7 @@ export function JsonDiffEditor({
           </div>
 
           {/* Editor Footer */}
-          <div className="px-4 py-2.5 border-t bg-gradient-to-r from-muted/50 to-muted/30 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="px-4 py-2.5 border-t bg-linear-to-r from-muted/50 to-muted/30 flex items-center justify-between text-xs text-muted-foreground">
             <span className="font-medium">Ready to compare {compareMode === 'json' ? 'JSON' : 'text'}</span>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />

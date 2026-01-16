@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import LZString from 'lz-string';
 import dynamic from 'next/dynamic';
@@ -95,6 +95,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,7 +143,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function DifferPage() {
+function DifferPageContent() {
   const [original, setOriginal] = useState('');
   const [modified, setModified] = useState('');
   const [originalFileName, setOriginalFileName] = useState<string>();
@@ -149,6 +151,7 @@ export default function DifferPage() {
   const [showDiff, setShowDiff] = useState(false);
   const [currentDiffIndex, setCurrentDiffIndex] = useState(0);
   const [privacyMode, setPrivacyMode] = useState(true);
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -644,28 +647,14 @@ export default function DifferPage() {
                   <TooltipButton
                     variant={privacyMode ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setPrivacyMode(!privacyMode)}
-                    tooltip={privacyMode ? "All data stays in your browser. Click to disable." : "Enable privacy mode to prevent data from being sent to servers"}
+                    onClick={() => setShowPrivacyDialog(true)}
+                    tooltip={privacyMode ? "All data stays in your browser. Click to view details." : "Click to learn about privacy mode"}
                   >
                     <Shield className="h-4 w-4 mr-2" />
                     {privacyMode ? 'Privacy Mode ON' : 'Privacy Mode OFF'}
                   </TooltipButton>
                 </div>
               </div>
-
-              {privacyMode && (
-                <div className="mt-3 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg flex items-start gap-2">
-                  <Shield className="h-5 w-5 text-green-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-green-600">
-                      Your data is completely private
-                    </p>
-                    <p className="text-xs text-green-600/80">
-                      All processing happens in your browser. No data is sent to our servers.
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           </header>
 
@@ -793,7 +782,7 @@ export default function DifferPage() {
 
                 {/* Action Buttons */}
                 <div className="relative flex items-center gap-2 mb-4 flex-wrap">
-                  {/* Left side buttons */}
+                  {/* Undo button (appears when content was cleared) */}
                   {undoState && (
                     <TooltipButton
                       onClick={handleUndo}
@@ -806,138 +795,149 @@ export default function DifferPage() {
                       Undo Clear
                     </TooltipButton>
                   )}
-                  <TooltipButton onClick={handleSwap} variant="outline" size="sm" tooltip="Swap the original and modified content">
-                    <ArrowLeftRight className="h-4 w-4 mr-2" />
-                    Swap
-                  </TooltipButton>
 
-                  {/* Mode Toggle - JSON/Text */}
-                  <div className="flex items-center border rounded-md overflow-hidden">
-                    <button
-                      onClick={() => setCompareMode('json')}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                        compareMode === 'json'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <FileJson className="h-3.5 w-3.5 inline mr-1" />
-                      JSON
-                    </button>
-                    <button
-                      onClick={() => setCompareMode('text')}
-                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                        compareMode === 'text'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <FileText className="h-3.5 w-3.5 inline mr-1" />
-                      Text
-                    </button>
-                  </div>
+                  {/* Group 1: Data Manipulation - Swap & Mode Toggle */}
+                  <div className="flex items-center gap-2 px-2 py-1 bg-muted/30 rounded-lg border border-border/50">
+                    <TooltipButton onClick={handleSwap} variant="ghost" size="sm" tooltip="Swap the original and modified content">
+                      <ArrowLeftRight className="h-4 w-4 mr-2" />
+                      Swap
+                    </TooltipButton>
 
-                  {compareMode === 'json' && (
-                    <TooltipButton
+                    <Separator orientation="vertical" className="h-6!" />
+
+                    {/* Mode Toggle - JSON/Text */}
+                    <ToggleGroup
+                      type="single"
+                      value={compareMode}
+                      onValueChange={(value) => value && setCompareMode(value as 'json' | 'text')}
                       variant="outline"
                       size="sm"
+                    >
+                      <ToggleGroupItem value="json" aria-label="JSON mode">
+                        <FileJson className="h-3.5 w-3.5 mr-1" />
+                        JSON
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="text" aria-label="Text mode">
+                        <FileText className="h-3.5 w-3.5 mr-1" />
+                        Text
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+
+                    <Separator orientation="vertical" className="h-6!" />
+                    <TooltipButton
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setShowSettings(true)}
+                      disabled={compareMode !== 'json'}
                       data-tour="options"
-                      tooltip="Configure comparison options and apply presets"
+                      tooltip={compareMode === 'json' ? "Configure comparison options and apply presets" : "Options only available in JSON mode"}
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       Options
                     </TooltipButton>
-                  )}
+                  </div>
+
                   {/* Spacer */}
                   <div className="flex-1" />
 
-                  {/* Primary Compare/Diff Button - Centered */}
-                  <TooltipButton
-                    onClick={() => setShowDiff(!showDiff)}
-                    variant={showDiff ? 'outline' : 'default'}
-                    size="default"
-                    disabled={!canCompare}
-                    data-tour="show-diff"
-                    tooltip={showDiff ? "Switch back to split editors" : `Compare ${compareMode === 'json' ? 'JSONs' : 'text'} and highlight differences (Ctrl+D)`}
-                    className={`px-6 font-semibold ${!showDiff ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' : ''}`}
-                  >
-                    {showDiff ? (
+                  {/* Group 2: View Toggle - Compare/Show Editors */}
+                  <div className="flex items-center gap-2 px-2 py-1 bg-primary/5 rounded-lg border border-primary/20">
+                    <TooltipButton
+                      onClick={() => setShowDiff(!showDiff)}
+                      variant={showDiff ? 'outline' : 'default'}
+                      size="default"
+                      disabled={!canCompare}
+                      data-tour="show-diff"
+                      tooltip={showDiff ? "Switch back to split editors" : `Compare ${compareMode === 'json' ? 'JSONs' : 'text'} and highlight differences (Ctrl+D)`}
+                      className={`px-6 font-semibold ${!showDiff ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md' : ''}`}
+                    >
+                      {showDiff ? (
+                        <>
+                          <ArrowLeftRight className="h-4 w-4 mr-2" />
+                          Show Editors
+                        </>
+                      ) : (
+                        <>
+                          <GitCompareArrows className="h-4 w-4 mr-2" />
+                          Compare
+                        </>
+                      )}
+                    </TooltipButton>
+
+                    {/* Diff Navigation (appears when comparing) */}
+                    {showDiff && canCompare && (detailedStats.added + detailedStats.removed + detailedStats.modified) > 0 && (
                       <>
-                        <ArrowLeftRight className="h-4 w-4 mr-2" />
-                        Show Editors
-                      </>
-                    ) : (
-                      <>
-                        <GitCompareArrows className="h-4 w-4 mr-2" />
-                        Compare
+                        <Separator orientation="vertical" className="h-6!" />
+                        <DiffNavigation
+                          currentIndex={currentDiffIndex}
+                          totalDiffs={detailedStats.added + detailedStats.removed + detailedStats.modified}
+                          onNext={handleNextDiff}
+                          onPrevious={handlePreviousDiff}
+                        />
                       </>
                     )}
-                  </TooltipButton>
+                  </div>
 
                   {/* Spacer */}
                   <div className="flex-1" />
 
-                  {/* Right side buttons */}
-                  {showDiff && canCompare && (detailedStats.added + detailedStats.removed + detailedStats.modified) > 0 && (
-                    <DiffNavigation
-                      currentIndex={currentDiffIndex}
-                      totalDiffs={detailedStats.added + detailedStats.removed + detailedStats.modified}
-                      onNext={handleNextDiff}
-                      onPrevious={handlePreviousDiff}
-                    />
-                  )}
+                  {/* Group 3: Actions - Share, Export, Clear */}
+                  <div className="flex items-center gap-2 px-2 py-1 bg-muted/30 rounded-lg border border-border/50">
+                    <TooltipButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowShareDialog(true)}
+                      disabled={!canCompare}
+                      tooltip={privacyMode
+                        ? "Generate a shareable link (data encoded in URL, no server) (Ctrl+S)"
+                        : "Save and share your diff online (Ctrl+S)"}
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share
+                    </TooltipButton>
 
-                  <TooltipButton
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowShareDialog(true)}
-                    disabled={!canCompare}
-                    tooltip={privacyMode
-                      ? "Generate a shareable link (data encoded in URL, no server) (Ctrl+S)"
-                      : "Save and share your diff online (Ctrl+S)"}
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </TooltipButton>
+                    <Separator orientation="vertical" className="h-6!" />
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <TooltipButton variant="outline" size="sm" disabled={!canCompare} tooltip="Export diff in various formats (JSON, HTML, Markdown, Text)">
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                      </TooltipButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleDownload('both')}>
-                        <FileJson className="h-4 w-4 mr-2" />
-                        Download as JSON
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExport('html')}>
-                        <Code className="h-4 w-4 mr-2" />
-                        Export as HTML
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExport('markdown')}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Export as Markdown
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExport('text')}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Export as Text
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <TooltipButton variant="ghost" size="sm" disabled={!canCompare} tooltip="Export diff in various formats (JSON, HTML, Markdown, Text)">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export
+                        </TooltipButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleDownload('both')}>
+                          <FileJson className="h-4 w-4 mr-2" />
+                          Download as JSON
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('html')}>
+                          <Code className="h-4 w-4 mr-2" />
+                          Export as HTML
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('markdown')}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Export as Markdown
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('text')}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Export as Text
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-                  <TooltipButton
-                    onClick={() => setShowClearConfirm(true)}
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                    tooltip="Clear both editors (Ctrl+K)"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Clear All
-                  </TooltipButton>
+                    <Separator orientation="vertical" className="h-6!" />
+
+                    <TooltipButton
+                      onClick={() => setShowClearConfirm(true)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      tooltip="Clear both editors (Ctrl+K)"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear
+                    </TooltipButton>
+                  </div>
                 </div>
 
                 {/* Editor */}
@@ -979,17 +979,16 @@ export default function DifferPage() {
                           }}
                           accept={compareMode === 'json' ? '.json' : '*'}
                         />
-                        {compareMode === 'json' && (
-                          <TooltipButton
-                            onClick={() => handleFormat('original')}
-                            variant="ghost"
-                            size="sm"
-                            tooltip="Auto-format original JSON (Ctrl+B)"
-                            className="h-7 w-7 p-0"
-                          >
-                            <Wand2 className="h-4 w-4" />
-                          </TooltipButton>
-                        )}
+                        <TooltipButton
+                          onClick={() => handleFormat('original')}
+                          variant="ghost"
+                          size="sm"
+                          disabled={compareMode !== 'json'}
+                          tooltip={compareMode === 'json' ? "Auto-format original JSON (Ctrl+B)" : "Format only available in JSON mode"}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Wand2 className="h-4 w-4" />
+                        </TooltipButton>
                       </>
                     )
                   }
@@ -1017,17 +1016,16 @@ export default function DifferPage() {
                           }}
                           accept={compareMode === 'json' ? '.json' : '*'}
                         />
-                        {compareMode === 'json' && (
-                          <TooltipButton
-                            onClick={() => handleFormat('modified')}
-                            variant="ghost"
-                            size="sm"
-                            tooltip="Auto-format modified JSON (Ctrl+B)"
-                            className="h-7 w-7 p-0"
-                          >
-                            <Wand2 className="h-4 w-4" />
-                          </TooltipButton>
-                        )}
+                        <TooltipButton
+                          onClick={() => handleFormat('modified')}
+                          variant="ghost"
+                          size="sm"
+                          disabled={compareMode !== 'json'}
+                          tooltip={compareMode === 'json' ? "Auto-format modified JSON (Ctrl+B)" : "Format only available in JSON mode"}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Wand2 className="h-4 w-4" />
+                        </TooltipButton>
                       </>
                     )
                   }
@@ -1130,7 +1128,78 @@ export default function DifferPage() {
             cancelText="Cancel"
             variant="destructive"
           />
+
+          {/* Privacy Mode Dialog */}
+          <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Shield className={`h-5 w-5 ${privacyMode ? 'text-green-600' : 'text-muted-foreground'}`} />
+                  Privacy Mode
+                </DialogTitle>
+                <DialogDescription>
+                  Control how your data is handled when using the differ
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                {privacyMode ? (
+                  <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-sm font-medium text-green-600">Privacy Mode is ON</span>
+                    </div>
+                    <ul className="text-sm text-green-600/80 space-y-1.5 ml-4">
+                      <li>• All processing happens in your browser</li>
+                      <li>• No data is sent to our servers</li>
+                      <li>• Shared links encode data in the URL</li>
+                      <li>• History is stored locally only</li>
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-2 w-2 rounded-full bg-amber-500" />
+                      <span className="text-sm font-medium text-amber-600">Privacy Mode is OFF</span>
+                    </div>
+                    <ul className="text-sm text-amber-600/80 space-y-1.5 ml-4">
+                      <li>• Shared diffs are stored on our servers</li>
+                      <li>• Links are shorter and easier to share</li>
+                      <li>• View count tracking is enabled</li>
+                      <li>• Diffs can be accessed by anyone with the link</li>
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPrivacyDialog(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    variant={privacyMode ? 'outline' : 'default'}
+                    onClick={() => {
+                      setPrivacyMode(!privacyMode);
+                      setShowPrivacyDialog(false);
+                    }}
+                  >
+                    {privacyMode ? 'Turn Off Privacy Mode' : 'Turn On Privacy Mode'}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </ErrorBoundary>
+  );
+}
+
+export default function DifferPage() {
+  return (
+    <Suspense fallback={<EditorLoading height="100vh" showDualEditor={true} />}>
+      <DifferPageContent />
+    </Suspense>
   );
 }

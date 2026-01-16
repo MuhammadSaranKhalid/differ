@@ -68,7 +68,7 @@ export default function ToolsPage() {
                       {tool.title}
                     </h3>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4 flex-grow">
+                  <p className="text-sm text-muted-foreground mb-4 grow">
                     {tool.metaDescription.slice(0, 120)}...
                   </p>
                   <div className="flex items-center text-sm text-primary font-medium">
@@ -121,7 +121,7 @@ export default function ToolsPage() {
           renderCategory('Configuration Tools', 'config-tools', configTools)}
 
         {/* CTA Section */}
-        <Card className="p-8 mt-12 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
+        <Card className="p-8 mt-12 bg-linear-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4">Need All Features in One Place?</h2>
             <p className="text-muted-foreground mb-6">

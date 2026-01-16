@@ -43,11 +43,11 @@ export default function Home() {
       <main className="min-h-screen flex flex-col items-center">
         <div className="flex-1 w-full flex flex-col items-center">
           {/* Enhanced Navigation */}
-          <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 sticky top-0 z-50 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
             <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
               <div className="flex gap-5 items-center font-semibold">
                 <Link href={"/"} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                  <div className="h-8 w-8 rounded-lg bg-linear-to-br from-primary to-primary/60 flex items-center justify-center">
                     <FileJson className="h-5 w-5 text-primary-foreground" />
                   </div>
                   <span className="text-lg font-bold">JSON Differ</span>
@@ -66,7 +66,7 @@ export default function Home() {
             <VantaBackground />
 
             {/* Gradient overlay */}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-br from-background/90 via-background/80 to-background/90" />
+            <div className="absolute inset-0 -z-10 bg-linear-to-br from-background/90 via-background/80 to-background/90" />
 
             <div className="max-w-5xl mx-auto text-center space-y-8 relative">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-sm font-medium text-primary mb-4 hover:scale-105 transition-transform">
@@ -77,7 +77,7 @@ export default function Home() {
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
                 Compare JSON Files
                 <br />
-                <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   Instantly & Privately
                 </span>
               </h1>
@@ -117,7 +117,7 @@ export default function Home() {
           </div>
 
           {/* Statistics Section */}
-          <div className="w-full py-16 border-y bg-gradient-to-b from-background to-muted/20">
+          <div className="w-full py-16 border-y bg-linear-to-b from-background to-muted/20">
             <div className="max-w-7xl mx-auto px-5">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div className="text-center">
@@ -162,8 +162,8 @@ export default function Home() {
 
               {/* Mock Editor Interface */}
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl blur-3xl -z-10" />
-                <Card className="p-1 bg-gradient-to-br from-primary/10 to-background border-2">
+                <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-primary/10 rounded-xl blur-3xl -z-10" />
+                <Card className="p-1 bg-linear-to-br from-primary/10 to-background border-2">
                   <div className="bg-card rounded-lg overflow-hidden">
                     {/* Editor Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
@@ -238,7 +238,7 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50 group">
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <div className="h-14 w-14 rounded-xl bg-linear-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Shield className="h-7 w-7 text-primary-foreground" />
                   </div>
                   <h3 className="font-bold text-xl mb-3">Privacy First</h3>
@@ -248,7 +248,7 @@ export default function Home() {
                 </Card>
 
                 <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50 group">
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <div className="h-14 w-14 rounded-xl bg-linear-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Zap className="h-7 w-7 text-primary-foreground" />
                   </div>
                   <h3 className="font-bold text-xl mb-3">Powerful Editor</h3>
@@ -258,7 +258,7 @@ export default function Home() {
                 </Card>
 
                 <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50 group">
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <div className="h-14 w-14 rounded-xl bg-linear-to-br from-primary to-primary/60 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     <Share2 className="h-7 w-7 text-primary-foreground" />
                   </div>
                   <h3 className="font-bold text-xl mb-3">Share & Collaborate</h3>
@@ -271,7 +271,7 @@ export default function Home() {
           </div>
 
           {/* Testimonials / Trust Section */}
-          <div className="w-full py-20 px-5 bg-gradient-to-b from-muted/30 to-background">
+          <div className="w-full py-20 px-5 bg-linear-to-b from-muted/30 to-background">
             <div className="max-w-7xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">Trusted by Developers Worldwide</h2>
@@ -279,9 +279,9 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-6 bg-gradient-to-br from-card to-card/50">
+                <Card className="p-6 bg-linear-to-br from-card to-card/50">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                       <span className="text-lg font-bold">SJ</span>
                     </div>
                     <div>
@@ -299,9 +299,9 @@ export default function Home() {
                   </div>
                 </Card>
 
-                <Card className="p-6 bg-gradient-to-br from-card to-card/50">
+                <Card className="p-6 bg-linear-to-br from-card to-card/50">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                       <span className="text-lg font-bold">MC</span>
                     </div>
                     <div>
@@ -319,9 +319,9 @@ export default function Home() {
                   </div>
                 </Card>
 
-                <Card className="p-6 bg-gradient-to-br from-card to-card/50">
+                <Card className="p-6 bg-linear-to-br from-card to-card/50">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                       <span className="text-lg font-bold">AP</span>
                     </div>
                     <div>
@@ -363,7 +363,7 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <CheckCircle2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -373,7 +373,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Code2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -383,7 +383,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <FileJson className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -393,7 +393,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-start gap-3 p-6 rounded-lg border bg-card hover:border-primary/50 transition-colors">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Share2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -409,7 +409,7 @@ export default function Home() {
           <div className="w-full py-20 px-5">
             <div className="max-w-4xl mx-auto">
               <Card className="relative overflow-hidden border-2 border-primary/20">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-primary/5" />
+                <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-background to-primary/5" />
                 <div className="relative p-12 text-center">
                   <h2 className="text-3xl md:text-4xl font-bold mb-4">
                     Ready to Start Comparing?
@@ -611,7 +611,7 @@ export default function Home() {
                 {/* Brand */}
                 <div className="space-y-4">
                   <Link href="/" className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-linear-to-br from-primary to-primary/60 flex items-center justify-center">
                       <FileJson className="h-5 w-5 text-primary-foreground" />
                     </div>
                     <span className="text-lg font-bold">JSON Differ</span>

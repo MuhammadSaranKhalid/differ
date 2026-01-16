@@ -18,7 +18,7 @@ export default function DocsPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b bg-gradient-to-b from-background to-muted/20">
+      <div className="border-b bg-linear-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-3xl">
             <Badge variant="secondary" className="mb-4">
@@ -361,7 +361,7 @@ export default function DocsPage() {
                 </nav>
               </Card>
 
-              <Card className="p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
+              <Card className="p-6 bg-linear-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
                 <h3 className="font-semibold mb-2">Need Help?</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Can't find what you're looking for? Check out our comprehensive guides or reach out

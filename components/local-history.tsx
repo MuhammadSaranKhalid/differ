@@ -427,14 +427,14 @@ export function LocalHistory({ onLoadDiff, currentOriginal, currentModified }: L
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <div className="p-2 bg-muted/30 rounded text-xs font-mono overflow-hidden">
                           <div className="font-medium text-muted-foreground mb-1">Original</div>
-                          <pre className="whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                          <pre className="whitespace-pre-wrap wrap-break-word max-h-32 overflow-y-auto">
                             {entry.original.substring(0, 500)}
                             {entry.original.length > 500 && '...'}
                           </pre>
                         </div>
                         <div className="p-2 bg-muted/30 rounded text-xs font-mono overflow-hidden">
                           <div className="font-medium text-muted-foreground mb-1">Modified</div>
-                          <pre className="whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                          <pre className="whitespace-pre-wrap wrap-break-word max-h-32 overflow-y-auto">
                             {entry.modified.substring(0, 500)}
                             {entry.modified.length > 500 && '...'}
                           </pre>

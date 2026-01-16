@@ -42,7 +42,7 @@ export function ToolPageClient({ pageConfig }: ToolPageClientProps) {
     <div className="space-y-6">
       {/* CTA for examples */}
       {hasExamples && (
-        <Card className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
+        <Card className="p-6 bg-linear-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Sparkles className="h-6 w-6 text-purple-600" />
@@ -95,7 +95,7 @@ export function ToolPageClient({ pageConfig }: ToolPageClientProps) {
       {/* Info Card */}
       <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
         <div className="flex items-start gap-3">
-          <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+          <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center shrink-0">
             <CheckCircle2 className="h-5 w-5 text-green-600" />
           </div>
           <div>
