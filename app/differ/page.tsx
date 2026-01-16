@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import LZString from 'lz-string';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { EditorLoading, PanelLoading } from '@/components/editor-loading';
-import { OnboardingTour } from '@/components/onboarding-tour';
+import { EditorLoading } from '@/components/editor-loading';
+// import { OnboardingTour } from '@/components/onboarding-tour';
 import type { editor } from 'monaco-editor';
 
 // Lazy load heavy components
@@ -16,32 +18,38 @@ const JsonDiffEditor = dynamic(
   }
 );
 
-const FormatConverterPanel = dynamic(
-  () => import('@/components/format-converter-panel').then((mod) => ({ default: mod.FormatConverterPanel })),
-  {
-    ssr: false,
-    loading: () => <PanelLoading />
-  }
-);
+// Commented out - only Compare tab for now
+// const FormatConverterPanel = dynamic(
+//   () => import('@/components/format-converter-panel').then((mod) => ({ default: mod.FormatConverterPanel })),
+//   {
+//     ssr: false,
+//     loading: () => <PanelLoading />
+//   }
+// );
 
-const SchemaValidatorPanel = dynamic(
-  () => import('@/components/schema-validator-panel').then((mod) => ({ default: mod.SchemaValidatorPanel })),
-  {
-    ssr: false,
-    loading: () => <PanelLoading />
-  }
-);
+// const SchemaValidatorPanel = dynamic(
+//   () => import('@/components/schema-validator-panel').then((mod) => ({ default: mod.SchemaValidatorPanel })),
+//   {
+//     ssr: false,
+//     loading: () => <PanelLoading />
+//   }
+// );
 
-const LocalHistory = dynamic(
-  () => import('@/components/local-history').then((mod) => ({ default: mod.LocalHistory })),
-  {
-    ssr: false,
-    loading: () => <PanelLoading />
-  }
-);
+// const LocalHistory = dynamic(
+//   () => import('@/components/local-history').then((mod) => ({ default: mod.LocalHistory })),
+//   {
+//     ssr: false,
+//     loading: () => <PanelLoading />
+//   }
+// );
 
 const HistorySidebar = dynamic(
   () => import('@/components/history-sidebar').then((mod) => ({ default: mod.HistorySidebar })),
+  { ssr: false }
+);
+
+const ShareLinkDialog = dynamic(
+  () => import('@/components/share-link-dialog').then((mod) => ({ default: mod.ShareLinkDialog })),
   { ssr: false }
 );
 
@@ -81,7 +89,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { HelpIcon } from '@/components/help-icon';
 import { Button } from '@/components/ui/button';
 import { TooltipButton } from '@/components/tooltip-button';
-import { Card } from '@/components/ui/card';
+// import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -118,7 +126,7 @@ import {
   Download,
   Share2,
   Wand2,
-  AlertCircle,
+  // AlertCircle,
   Shield,
   Settings,
   Trash2,
@@ -187,6 +195,32 @@ export default function DifferPage() {
   // Debounced values for validation (prevents lag during typing)
   const [debouncedOriginal] = useDebounce(original, 300);
   const [debouncedModified] = useDebounce(modified, 300);
+
+  // URL search params for loading shared diffs
+  const searchParams = useSearchParams();
+
+  // Load shared diff from URL on mount
+  useEffect(() => {
+    const sharedData = searchParams.get('d');
+    if (sharedData) {
+      try {
+        const decompressed = LZString.decompressFromEncodedURIComponent(sharedData);
+        if (decompressed) {
+          const parsed = JSON.parse(decompressed);
+          if (parsed.o && parsed.m) {
+            setOriginal(parsed.o);
+            setModified(parsed.m);
+            toast.success('Loaded shared diff');
+            // Clear the URL parameter without reloading
+            window.history.replaceState({}, '', '/differ');
+          }
+        }
+      } catch (error) {
+        toast.error('Failed to load shared diff');
+        console.error('Failed to parse shared data:', error);
+      }
+    }
+  }, [searchParams]);
 
   // Update validation when JSON changes (debounced)
   useEffect(() => {
@@ -509,9 +543,9 @@ export default function DifferPage() {
     {
       key: 's',
       ctrl: true,
-      description: 'Save & Share',
+      description: 'Share',
       action: () => {
-        if (canCompare && !privacyMode) {
+        if (canCompare) {
           setShowShareDialog(true);
         }
       },
@@ -581,7 +615,6 @@ export default function DifferPage() {
   ], activeTab === 'compare' || true);
 
   return (
-    <OnboardingTour>
       <ErrorBoundary>
         <div className="h-screen flex flex-col bg-background overflow-hidden" data-tour="welcome">
           {/* Header */}
@@ -617,16 +650,6 @@ export default function DifferPage() {
                     <Shield className="h-4 w-4 mr-2" />
                     {privacyMode ? 'Privacy Mode ON' : 'Privacy Mode OFF'}
                   </TooltipButton>
-                  <TooltipButton
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowShareDialog(true)}
-                    disabled={!canCompare || privacyMode}
-                    tooltip={privacyMode ? "Disable privacy mode to share" : "Share your diff with others (Ctrl+S)"}
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </TooltipButton>
                 </div>
               </div>
 
@@ -661,9 +684,9 @@ export default function DifferPage() {
 
             {/* Main content area */}
             <div className="flex-1 overflow-auto px-4 py-4">
-            {/* Tabs */}
+            {/* Tabs - Only Compare tab for now */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-              <TabsList className="mb-4 shrink-0" data-tour="tabs">
+              {/* <TabsList className="mb-4 shrink-0" data-tour="tabs">
                 <TabsTrigger value="compare">
                   <Code className="h-4 w-4 mr-2" />
                   Compare
@@ -680,7 +703,7 @@ export default function DifferPage() {
                   <History className="h-4 w-4 mr-2" />
                   History
                 </TabsTrigger>
-              </TabsList>
+              </TabsList> */}
 
               <TabsContent value="compare" className="space-y-4">
                 {/* Options Dialog */}
@@ -865,6 +888,19 @@ export default function DifferPage() {
                     />
                   )}
 
+                  <TooltipButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowShareDialog(true)}
+                    disabled={!canCompare}
+                    tooltip={privacyMode
+                      ? "Generate a shareable link (data encoded in URL, no server) (Ctrl+S)"
+                      : "Save and share your diff online (Ctrl+S)"}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </TooltipButton>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <TooltipButton variant="outline" size="sm" disabled={!canCompare} tooltip="Export diff in various formats (JSON, HTML, Markdown, Text)">
@@ -1003,6 +1039,7 @@ export default function DifferPage() {
                 />
               </TabsContent>
 
+              {/* Other tabs commented out for now
               <TabsContent value="convert">
                 <FormatConverterPanel />
               </TabsContent>
@@ -1046,7 +1083,6 @@ export default function DifferPage() {
                   <SchemaValidatorPanel json={original} />
                 </div>
               </TabsContent>
-
               <TabsContent value="history">
                 <LocalHistory
                   onLoadDiff={handleLoadFromHistory}
@@ -1054,17 +1090,27 @@ export default function DifferPage() {
                   currentModified={modified}
                 />
               </TabsContent>
+              */}
             </Tabs>
             </div>
           </div>
 
-          {/* Share Dialog */}
-          <ShareDialog
-            open={showShareDialog}
-            onOpenChange={setShowShareDialog}
-            originalJson={original}
-            modifiedJson={modified}
-          />
+          {/* Share Dialog - URL-based for privacy mode, server-based otherwise */}
+          {privacyMode ? (
+            <ShareLinkDialog
+              open={showShareDialog}
+              onOpenChange={setShowShareDialog}
+              originalJson={original}
+              modifiedJson={modified}
+            />
+          ) : (
+            <ShareDialog
+              open={showShareDialog}
+              onOpenChange={setShowShareDialog}
+              originalJson={original}
+              modifiedJson={modified}
+            />
+          )}
 
           {/* Keyboard Shortcuts Dialog */}
           <KeyboardShortcutsDialog
@@ -1085,6 +1131,5 @@ export default function DifferPage() {
           />
         </div>
       </ErrorBoundary>
-    </OnboardingTour>
   );
 }
