@@ -4,18 +4,21 @@ import { JsonDiffEditor } from '@/components/json-diff-editor';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { SavedDiff } from '@/lib/diff-service';
+import { SavedDiff, getOriginalContent, getModifiedContent } from '@/lib/diff-service';
 import { getJsonSizeKB, countDifferences } from '@/lib/json-utils';
-import { FileJson, Eye, Calendar, Copy } from 'lucide-react';
+import { FileJson, FileText, Eye, Calendar, Copy } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export default function SharedDiffView({ diff }: { diff: SavedDiff }) {
   const [copied, setCopied] = useState(false);
 
-  const original = JSON.stringify(diff.original_json, null, 2);
-  const modified = JSON.stringify(diff.modified_json, null, 2);
-  const diffCount = countDifferences(original, modified);
+  const original = getOriginalContent(diff);
+  const modified = getModifiedContent(diff);
+  const isTextDiff = diff.diff_type === 'text';
+
+  // Only count differences for JSON diffs
+  const diffCount = isTextDiff ? 0 : countDifferences(original, modified);
 
   const handleCopyUrl = async () => {
     try {
@@ -34,6 +37,9 @@ export default function SharedDiffView({ diff }: { diff: SavedDiff }) {
     day: 'numeric',
   });
 
+  const DiffIcon = isTextDiff ? FileText : FileJson;
+  const diffTypeLabel = isTextDiff ? 'Text' : 'JSON';
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -41,10 +47,10 @@ export default function SharedDiffView({ diff }: { diff: SavedDiff }) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <FileJson className="h-8 w-8 text-primary" />
+              <DiffIcon className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold">
-                  {diff.title || 'Shared JSON Diff'}
+                  {diff.title || `Shared ${diffTypeLabel} Diff`}
                 </h1>
                 {diff.description && (
                   <p className="text-sm text-muted-foreground">{diff.description}</p>
@@ -72,6 +78,10 @@ export default function SharedDiffView({ diff }: { diff: SavedDiff }) {
         <Card className="mb-4 p-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-6 flex-wrap">
+              <Badge variant="outline">
+                {diffTypeLabel} Diff
+              </Badge>
+
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
@@ -86,9 +96,11 @@ export default function SharedDiffView({ diff }: { diff: SavedDiff }) {
                 </span>
               </div>
 
-              <Badge variant="secondary">
-                {diffCount} difference{diffCount !== 1 ? 's' : ''}
-              </Badge>
+              {!isTextDiff && (
+                <Badge variant="secondary">
+                  {diffCount} difference{diffCount !== 1 ? 's' : ''}
+                </Badge>
+              )}
 
               {diff.tags && diff.tags.length > 0 && (
                 <div className="flex gap-1">
@@ -115,6 +127,7 @@ export default function SharedDiffView({ diff }: { diff: SavedDiff }) {
           readOnly={true}
           showDiff={true}
           height="calc(100vh - 300px)"
+          compareMode={isTextDiff ? 'text' : 'json'}
         />
       </div>
     </div>

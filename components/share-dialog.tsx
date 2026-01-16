@@ -13,22 +13,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { saveDiff, getShareUrl } from '@/lib/diff-service';
+import { saveDiff, getShareUrl, type DiffType } from '@/lib/diff-service';
 import { Copy, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  originalJson: string;
-  modifiedJson: string;
+  originalContent: string;
+  modifiedContent: string;
+  diffType: DiffType;
 }
 
 export function ShareDialog({
   open,
   onOpenChange,
-  originalJson,
-  modifiedJson,
+  originalContent,
+  modifiedContent,
+  diffType,
 }: ShareDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -42,30 +44,60 @@ export function ShareDialog({
     setLoading(true);
 
     try {
-      const original = JSON.parse(originalJson);
-      const modified = JSON.parse(modifiedJson);
+      if (diffType === 'json') {
+        // Validate JSON
+        const original = JSON.parse(originalContent);
+        const modified = JSON.parse(modifiedContent);
 
-      const result = await saveDiff({
-        original_json: original,
-        modified_json: modified,
-        title: title || 'Untitled Diff',
-        description,
-        is_public: isPublic,
-        tags: tags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean),
-      });
+        const result = await saveDiff({
+          diff_type: 'json',
+          original_json: original,
+          modified_json: modified,
+          title: title || 'Untitled Diff',
+          description,
+          is_public: isPublic,
+          tags: tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean),
+        });
 
-      if (result.success && result.shareToken) {
-        const url = getShareUrl(result.shareToken);
-        setShareUrl(url);
-        toast.success('Diff saved successfully! Share link is ready.');
+        if (result.success && result.shareToken) {
+          const url = getShareUrl(result.shareToken);
+          setShareUrl(url);
+          toast.success('Diff saved successfully! Share link is ready.');
+        } else {
+          toast.error(`Failed to save diff: ${result.error}`);
+        }
       } else {
-        toast.error(`Failed to save diff: ${result.error}`);
+        // Text diff
+        const result = await saveDiff({
+          diff_type: 'text',
+          original_text: originalContent,
+          modified_text: modifiedContent,
+          title: title || 'Untitled Text Diff',
+          description,
+          is_public: isPublic,
+          tags: tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean),
+        });
+
+        if (result.success && result.shareToken) {
+          const url = getShareUrl(result.shareToken);
+          setShareUrl(url);
+          toast.success('Diff saved successfully! Share link is ready.');
+        } else {
+          toast.error(`Failed to save diff: ${result.error}`);
+        }
       }
     } catch (error) {
-      toast.error('Invalid JSON. Please fix errors before sharing.');
+      if (diffType === 'json') {
+        toast.error('Invalid JSON. Please fix errors before sharing.');
+      } else {
+        toast.error('Failed to save diff. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -91,15 +123,20 @@ export function ShareDialog({
     onOpenChange(false);
   };
 
+  const dialogTitle = diffType === 'json' ? 'Share JSON Diff' : 'Share Text Diff';
+  const placeholderTitle = diffType === 'json'
+    ? 'My API Response Comparison'
+    : 'My Text Comparison';
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Share JSON Diff</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
             {shareUrl
               ? 'Your diff has been saved! Share the link below.'
-              : 'Configure sharing options for your JSON diff.'}
+              : `Configure sharing options for your ${diffType} diff.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -109,7 +146,7 @@ export function ShareDialog({
               <Label htmlFor="title">Title (optional)</Label>
               <Input
                 id="title"
-                placeholder="My API Response Comparison"
+                placeholder={placeholderTitle}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -119,7 +156,7 @@ export function ShareDialog({
               <Label htmlFor="description">Description (optional)</Label>
               <Input
                 id="description"
-                placeholder="Comparing production vs staging responses"
+                placeholder="Comparing production vs staging"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />

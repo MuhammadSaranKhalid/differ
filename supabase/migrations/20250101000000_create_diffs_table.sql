@@ -1,12 +1,19 @@
--- Create the diffs table for storing JSON comparisons
+-- Create the diffs table for storing JSON and text comparisons
 CREATE TABLE IF NOT EXISTS public.diffs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
 
-  -- JSON data
-  original_json JSONB NOT NULL,
-  modified_json JSONB NOT NULL,
+  -- Diff type: 'json' or 'text'
+  diff_type VARCHAR(10) DEFAULT 'json' NOT NULL,
+
+  -- JSON content (for JSON diffs)
+  original_json JSONB,
+  modified_json JSONB,
+
+  -- Text content (for text diffs)
+  original_text TEXT,
+  modified_text TEXT,
 
   -- Metadata
   title TEXT,
@@ -23,7 +30,13 @@ CREATE TABLE IF NOT EXISTS public.diffs (
   tags TEXT[] DEFAULT '{}',
 
   -- View counter
-  view_count INTEGER DEFAULT 0
+  view_count INTEGER DEFAULT 0,
+
+  -- Constraint to ensure appropriate fields are filled based on diff_type
+  CONSTRAINT valid_diff_content CHECK (
+    (diff_type = 'json' AND original_json IS NOT NULL AND modified_json IS NOT NULL) OR
+    (diff_type = 'text' AND original_text IS NOT NULL AND modified_text IS NOT NULL)
+  )
 );
 
 -- Create indexes for better query performance
@@ -31,6 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_diffs_user_id ON public.diffs(user_id);
 CREATE INDEX IF NOT EXISTS idx_diffs_share_token ON public.diffs(share_token);
 CREATE INDEX IF NOT EXISTS idx_diffs_created_at ON public.diffs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_diffs_is_public ON public.diffs(is_public);
+CREATE INDEX IF NOT EXISTS idx_diffs_diff_type ON public.diffs(diff_type);
 
 -- Enable Row Level Security
 ALTER TABLE public.diffs ENABLE ROW LEVEL SECURITY;
@@ -114,7 +128,8 @@ CREATE TRIGGER generate_share_token_trigger
   FOR EACH ROW
   EXECUTE FUNCTION public.set_share_token();
 
-COMMENT ON TABLE public.diffs IS 'Stores JSON diff comparisons with sharing capabilities';
+COMMENT ON TABLE public.diffs IS 'Stores JSON and text diff comparisons with sharing capabilities';
+COMMENT ON COLUMN public.diffs.diff_type IS 'Type of diff: json or text';
 COMMENT ON COLUMN public.diffs.share_token IS 'Unique token for sharing diffs via URL';
 COMMENT ON COLUMN public.diffs.is_public IS 'If true, anyone with the link can view this diff';
 COMMENT ON COLUMN public.diffs.user_id IS 'Owner of the diff. NULL for anonymous diffs';

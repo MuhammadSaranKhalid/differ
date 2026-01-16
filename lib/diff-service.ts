@@ -1,9 +1,17 @@
 import { createClient } from '@/lib/supabase/client';
 
+export type DiffType = 'json' | 'text';
+
 export interface DiffData {
   id?: string;
-  original_json: any;
-  modified_json: any;
+  diff_type: DiffType;
+  // For JSON diffs
+  original_json?: any;
+  modified_json?: any;
+  // For text diffs
+  original_text?: string;
+  modified_text?: string;
+  // Metadata
   title?: string;
   description?: string;
   is_public: boolean;
@@ -29,15 +37,23 @@ export async function saveDiff(data: DiffData): Promise<{ success: boolean; shar
     // Get current user (if authenticated)
     const { data: { user } } = await supabase.auth.getUser();
 
-    const diffData = {
-      original_json: data.original_json,
-      modified_json: data.modified_json,
+    const diffData: any = {
+      diff_type: data.diff_type,
       title: data.title,
       description: data.description,
       is_public: data.is_public,
       tags: data.tags || [],
       user_id: user?.id || null,
     };
+
+    // Set content based on diff type
+    if (data.diff_type === 'json') {
+      diffData.original_json = data.original_json;
+      diffData.modified_json = data.modified_json;
+    } else {
+      diffData.original_text = data.original_text;
+      diffData.modified_text = data.modified_text;
+    }
 
     const { data: savedDiff, error } = await supabase
       .from('diffs')
@@ -70,11 +86,15 @@ export async function loadDiffByToken(shareToken: string): Promise<{ success: bo
   try {
     const supabase = createClient();
 
+    console.log('Loading diff with token:', shareToken);
+
     const { data: diff, error } = await supabase
       .from('diffs')
       .select('*')
       .eq('share_token', shareToken)
       .single();
+
+      console.log('Loaded diff:', diff);
 
     if (error) {
       console.error('Error loading diff:', error);
@@ -85,11 +105,8 @@ export async function loadDiffByToken(shareToken: string): Promise<{ success: bo
       return { success: false, error: 'Diff not found' };
     }
 
-    // Increment view count
-    await supabase
-      .from('diffs')
-      .update({ view_count: diff.view_count + 1 })
-      .eq('id', diff.id);
+    // Increment view count using RPC function (bypasses RLS)
+    await supabase.rpc('increment_diff_view_count', { diff_id: diff.id });
 
     return {
       success: true,
@@ -208,4 +225,28 @@ export function getShareUrl(shareToken: string): string {
     : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
   return `${baseUrl}/differ/${shareToken}`;
+}
+
+/**
+ * Helper to get original content from a saved diff
+ */
+export function getOriginalContent(diff: SavedDiff): string {
+  if (diff.diff_type === 'json') {
+    return typeof diff.original_json === 'string'
+      ? diff.original_json
+      : JSON.stringify(diff.original_json, null, 2);
+  }
+  return diff.original_text || '';
+}
+
+/**
+ * Helper to get modified content from a saved diff
+ */
+export function getModifiedContent(diff: SavedDiff): string {
+  if (diff.diff_type === 'json') {
+    return typeof diff.modified_json === 'string'
+      ? diff.modified_json
+      : JSON.stringify(diff.modified_json, null, 2);
+  }
+  return diff.modified_text || '';
 }

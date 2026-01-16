@@ -1107,8 +1107,9 @@ export default function DifferPage() {
             <ShareDialog
               open={showShareDialog}
               onOpenChange={setShowShareDialog}
-              originalJson={original}
-              modifiedJson={modified}
+              originalContent={original}
+              modifiedContent={modified}
+              diffType={compareMode}
             />
           )}
 

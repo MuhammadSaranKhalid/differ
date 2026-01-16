@@ -1,5 +1,4 @@
 import { loadDiffByToken } from '@/lib/diff-service';
-import { redirect } from 'next/navigation';
 import SharedDiffView from './shared-diff-view';
 
 // Force dynamic rendering since this page depends on Supabase data
@@ -9,9 +8,10 @@ export const revalidate = 0;
 export default async function SharedDiffPage({
   params,
 }: {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }) {
-  const { success, diff, error } = await loadDiffByToken(params.token);
+  const { token } = await params;
+  const { success, diff, error } = await loadDiffByToken(token);
 
   if (!success || !diff) {
     return (
